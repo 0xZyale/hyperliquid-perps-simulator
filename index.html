@@ -27,6 +27,7 @@
     </nav>
     <div class="header-right">
       <button class="btn secondary" id="guideBtn">Start Guide</button>
+      <button class="btn" id="depositHeaderBtn">Deposit</button>
       <button class="btn" id="connectBtn">Connect</button>
     </div>
   </header>
@@ -91,7 +92,10 @@
       </div>
 
       <button class="btn" id="placeOrder" style="width:100%; margin-top:8px;">Place Order</button>
-      <button class="btn secondary" id="depositBtn" style="width:100%; margin-top:8px;">Simulate Deposit / Bridge</button>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn secondary" id="depositBtn" style="flex:1;">Deposit</button>
+        <button class="btn secondary" style="flex:1;" disabled title="Simulated only">Withdraw</button>
+      </div>
       <div class="sim-note">All actions are simulated. No wallet, no real USDC, no liquidation risk.</div>
     </div>
 
@@ -133,10 +137,14 @@
 
   <!-- Guide Overlay -->
   <div class="guide-overlay" id="guideOverlay">
+    <div class="spotlight" id="spotlight"></div>
+    <div class="guide-arrow" id="guideArrow"></div>
     <div class="guide-box">
       <h2 id="guideTitle">Welcome</h2>
+      <div id="guidePreview" class="guide-preview"></div>
       <p id="guideText"></p>
       <div class="guide-actions">
+        <button class="btn secondary" id="guideBack">Back</button>
         <button class="btn secondary" id="guideSkip">Skip</button>
         <button class="btn" id="guideNext">Next</button>
       </div>
