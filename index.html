@@ -1,1 +1,148 @@
-see local
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hyperliquid Perps Simulator</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div class="banner">SIMULATOR MODE — No real funds, no blockchain. Learn margin, leverage & the interface safely.</div>
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 32 32" fill="none">
+        <path d="M8 16C8 10 12 6 16 6C20 6 24 10 24 16C24 22 20 26 16 26C12 26 8 22 8 16Z" fill="#00d4b1"/>
+        <path d="M12 16C12 13 14 11 16 11C18 11 20 13 20 16C20 19 18 21 16 21C14 21 12 19 12 16Z" fill="#0b0e11"/>
+      </svg>
+      Hyperliquid
+    </div>
+    <nav>
+      <a href="#" class="active">Trade</a>
+      <a href="#">Portfolio</a>
+      <a href="#">Earn</a>
+      <a href="#">Vaults</a>
+      <a href="#">Staking</a>
+      <a href="#">Referrals</a>
+      <a href="#">Leaderboard</a>
+    </nav>
+    <div class="header-right">
+      <button class="btn secondary" id="guideBtn">Start Guide</button>
+      <button class="btn" id="connectBtn">Connect</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="chart-wrap">
+      <div class="market-header">
+        <div class="market-select" id="marketSelect">BTC-USDC ▾</div>
+        <div class="price" id="markPrice">—</div>
+        <div class="change" id="change24h">—</div>
+        <div class="stats">
+          <span>24h Vol: <span id="vol24h">$2.1B</span></span>
+          <span>OI: <span id="oi">$1.8B</span></span>
+          <span>Funding: <span id="funding">0.0012%</span></span>
+        </div>
+      </div>
+      <div id="chart"></div>
+    </div>
+
+    <div class="book">
+      <div class="book-header">Order Book</div>
+      <div class="book-rows" id="asks"></div>
+      <div class="book-spread" id="spread">Spread</div>
+      <div class="book-rows" id="bids"></div>
+    </div>
+
+    <div class="order-panel">
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button class="btn secondary small" id="crossBtn">Cross</button>
+        <button class="btn small" id="isolatedBtn">Isolated</button>
+        <span style="margin-left:auto; color:var(--muted);">Leverage</span>
+        <input type="range" class="leverage-slider" id="leverageSlider" min="1" max="50" value="10">
+        <span id="leverageVal">10x</span>
+      </div>
+
+      <div class="side-btns">
+        <button class="long" id="longBtn">Buy / Long</button>
+        <button class="short" id="shortBtn">Sell / Short</button>
+      </div>
+
+      <div class="info-box">
+        <div><span>Available to Trade</span><span id="available">0.00 USDC</span></div>
+        <div><span>Current Position</span><span id="currentPos">0.00 BTC</span></div>
+      </div>
+
+      <div class="row">
+        <label>Size</label>
+        <input type="number" id="sizeInput" placeholder="0.00" step="0.001" min="0">
+        <select id="sizeUnit"><option>BTC</option><option>USDC</option></select>
+      </div>
+      <div class="row">
+        <label>% Margin</label>
+        <input type="range" id="pctSlider" min="0" max="100" value="0" style="flex:1;">
+        <span id="pctVal">0%</span>
+      </div>
+
+      <div class="info-box" id="calcBox">
+        <div><span>Notional</span><span id="notional">—</span></div>
+        <div><span>Margin Required</span><span id="marginReq">—</span></div>
+        <div><span>Liq. Price (est.)</span><span id="liqPrice">—</span></div>
+        <div><span>Fees</span><span>0.045% / 0.015%</span></div>
+      </div>
+
+      <button class="btn" id="placeOrder" style="width:100%; margin-top:8px;">Place Order</button>
+      <button class="btn secondary" id="depositBtn" style="width:100%; margin-top:8px;">Simulate Deposit / Bridge</button>
+      <div class="sim-note">All actions are simulated. No wallet, no real USDC, no liquidation risk.</div>
+    </div>
+
+    <div class="bottom">
+      <div class="tabs">
+        <div class="tab active" data-tab="positions">Positions</div>
+        <div class="tab" data-tab="balances">Balances</div>
+        <div class="tab" data-tab="orders">Open Orders</div>
+        <div class="tab" data-tab="history">Trade History</div>
+      </div>
+      <div class="tab-content" id="tabContent">
+        <table id="positionsTable">
+          <thead>
+            <tr>
+              <th>Side</th><th>Market</th><th>Size</th><th>Entry</th><th>Mark</th><th>PnL (ROE%)</th><th>Liq.</th><th>Margin</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="positionsBody"><tr><td colspan="9" style="text-align:center; color:var(--muted);">No open positions yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Deposit Modal -->
+  <div class="modal" id="depositModal">
+    <div class="modal-content">
+      <h3>Simulate Deposit / Bridge</h3>
+      <p>On real Hyperliquid you bridge USDC (usually from Arbitrum) or deposit other assets. This adds simulated USDC to your margin balance.</p>
+      <div class="amount-btns">
+        <button class="btn secondary" data-amount="500">$500</button>
+        <button class="btn secondary" data-amount="1000">$1,000</button>
+        <button class="btn secondary" data-amount="5000">$5,000</button>
+        <button class="btn secondary" data-amount="10000">$10,000</button>
+      </div>
+      <button class="btn" id="closeDeposit">Close</button>
+      <div class="sim-note">In production: connect wallet → Deposit → choose chain/asset → confirm bridge. Funds appear as available margin after confirmation.</div>
+    </div>
+  </div>
+
+  <!-- Guide Overlay -->
+  <div class="guide-overlay" id="guideOverlay">
+    <div class="guide-box">
+      <h2 id="guideTitle">Welcome</h2>
+      <p id="guideText"></p>
+      <div class="guide-actions">
+        <button class="btn secondary" id="guideSkip">Skip</button>
+        <button class="btn" id="guideNext">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
