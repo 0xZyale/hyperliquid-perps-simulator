@@ -1,1 +1,190 @@
-see local
+/* Hyperliquid-style Perps Simulator */
+:root {
+  --bg: #0b0e11;
+  --panel: #12161c;
+  --panel-2: #161b22;
+  --border: #21262d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #00d4b1;
+  --accent-dark: #00a88a;
+  --buy: #00c853;
+  --sell: #ff5252;
+  --green: #3fb950;
+  --red: #f85149;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+header {
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 24px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--accent);
+}
+.logo svg { width: 28px; height: 28px; }
+nav { display: flex; gap: 20px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a.active, nav a:hover { color: var(--text); }
+.header-right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+.btn {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn:hover { background: var(--accent-dark); color: #fff; }
+.btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn.danger { background: var(--sell); color: #fff; }
+.btn.small { padding: 4px 8px; font-size: 12px; }
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 280px 320px;
+  grid-template-rows: 1fr 220px;
+  height: calc(100vh - 52px);
+  gap: 1px;
+  background: var(--border);
+}
+.chart-wrap, .book, .order-panel, .bottom {
+  background: var(--panel);
+  overflow: hidden;
+}
+.chart-wrap { grid-column: 1; grid-row: 1; position: relative; }
+.book { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; }
+.order-panel { grid-column: 3; grid-row: 1 / 3; display: flex; flex-direction: column; padding: 12px; overflow-y: auto; }
+.bottom { grid-column: 1 / 3; grid-row: 2; display: flex; flex-direction: column; }
+
+.market-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--panel-2);
+}
+.market-select { font-size: 18px; font-weight: 600; cursor: pointer; }
+.price { font-size: 20px; font-weight: 700; }
+.change.pos { color: var(--green); }
+.change.neg { color: var(--red); }
+.stats { color: var(--muted); font-size: 12px; display: flex; gap: 16px; }
+
+#chart { width: 100%; height: calc(100% - 48px); }
+
+.book-header { padding: 8px 12px; font-weight: 600; border-bottom: 1px solid var(--border); }
+.book-rows { flex: 1; overflow-y: auto; font-family: monospace; font-size: 12px; }
+.book-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 2px 12px; }
+.book-row.ask { color: var(--sell); }
+.book-row.bid { color: var(--buy); }
+.book-spread { text-align: center; padding: 4px; color: var(--muted); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.tab { padding: 8px 16px; cursor: pointer; color: var(--muted); }
+.tab.active { color: var(--text); border-bottom: 2px solid var(--accent); }
+.tab-content { flex: 1; overflow: auto; padding: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+th:first-child, td:first-child { text-align: left; }
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+
+.order-panel h3 { margin-bottom: 8px; font-size: 14px; }
+.row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+.row label { width: 80px; color: var(--muted); }
+input[type="number"], input[type="text"], select {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 4px;
+  flex: 1;
+}
+.leverage-slider { flex: 1; }
+.side-btns { display: flex; gap: 8px; margin: 8px 0; }
+.side-btns button { flex: 1; padding: 10px; font-size: 14px; font-weight: 600; }
+.side-btns .long { background: var(--buy); color: #000; }
+.side-btns .short { background: var(--sell); color: #fff; }
+.info-box { background: var(--panel-2); padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px; }
+.info-box div { display: flex; justify-content: space-between; margin: 2px 0; }
+
+/* Guide overlays */
+.guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.guide-box {
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 420px;
+  z-index: 1001;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.guide-box h2 { color: var(--accent); margin-bottom: 8px; }
+.guide-box p { margin-bottom: 12px; line-height: 1.4; color: var(--text); }
+.guide-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.highlight {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1002;
+}
+
+.banner {
+  background: #1a3a32;
+  color: var(--accent);
+  padding: 6px 12px;
+  font-size: 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.deposit-modal, .modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.modal-content {
+  background: var(--panel);
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 320px;
+  border: 1px solid var(--border);
+}
+.modal-content h3 { margin-bottom: 12px; color: var(--accent); }
+.amount-btns { display: flex; gap: 8px; margin: 12px 0; }
+.amount-btns button { flex: 1; }
+.sim-note { font-size: 11px; color: var(--muted); margin-top: 8px; }
