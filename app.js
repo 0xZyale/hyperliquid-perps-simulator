@@ -1143,6 +1143,20 @@ function showGuideStep() {
     if (el) {
       let r = el.getBoundingClientRect();
       // On margin step, expand the hole to also cover the Margin Required box
+      if (s.showChart) {
+        const chart = document.getElementById('chart');
+        if (chart) {
+          const chr = chart.getBoundingClientRect();
+          r = {
+            left: Math.min(r.left, chr.left),
+            top: Math.min(r.top, chr.top),
+            right: Math.max(r.right, chr.right),
+            bottom: Math.max(r.bottom, chr.bottom),
+            width: Math.max(r.right, chr.right) - Math.min(r.left, chr.left),
+            height: Math.max(r.bottom, chr.bottom) - Math.min(r.top, chr.top)
+          };
+        }
+      }
       if (s.require === 'margin') {
         const calc = document.getElementById('calcBox');
         if (calc) {
