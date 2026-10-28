@@ -510,12 +510,16 @@ function bindEvents() {
     }
   };
 
-  // Make Hypurr draggable
+  // Make Hypurr draggable (prevent image ghost-drag)
   const hypurrEl = document.getElementById('hypurr');
+  const hypurrImg = document.getElementById('hypurrCat');
+  hypurrImg.addEventListener('dragstart', (e) => e.preventDefault());
   let dragging = false, dragOffX = 0, dragOffY = 0;
   hypurrEl.addEventListener('mousedown', (e) => {
     if (e.target.id === 'hypurrBubble') return;
+    e.preventDefault();
     dragging = true;
+    hypurrUserMoved = true;
     const r = hypurrEl.getBoundingClientRect();
     dragOffX = e.clientX - r.left;
     dragOffY = e.clientY - r.top;
@@ -587,18 +591,24 @@ function hypurrSay(text, duration = 0) {
   if (duration > 0) {
     setTimeout(() => {
       if (document.getElementById('guideOverlay').classList.contains('active')) return;
-      bubble.textContent = "Click me for a tip, or hit Start Guide to practice again!";
+      bubble.textContent = "I’m Hypurr, your assistant. Drag me anywhere. Click me for tips or Start Guide.";
     }, duration);
   }
 }
 const guideSteps = [
   {
     title: 'Sprint 1: Bridge Funds',
-    text: 'First thing: you need margin. Click Deposit (top-right). Bridging takes ~10s for security. Next stays locked until funds arrive.',
+    text: 'First thing: you need margin. Click Deposit (top-right). Bridging takes ~10s for security. Next stays locked until funds arrive. Hypurr is your assistant — you can drag me anywhere.',
     target: '#depositHeaderBtn',
     preview: 'Deposit',
     require: 'bridge',
-    cat: 'Bridge first. No funds = no trade.'
+    cat: 'Bridge first. No funds = no trade. Drag me if I get in the way.'
+  },
+  {
+    title: 'Bridge complete — nice work',
+    text: 'Funds are arriving / arrived. Take a moment to look around the platform. When you’re ready, hit Next to start the order form.',
+    target: null,
+    cat: 'Congrats on bridging! Funds are in. Look around, then continue.'
   },
   {
     title: 'Sprint 2: Order Form — Leverage',
@@ -633,12 +643,19 @@ const guideSteps = [
     cat: 'Place the order now.'
   },
   {
+    title: 'Order form done — nice work',
+    text: 'You finished the order form. Take a moment to review the position you just opened. When you’re ready for the positions table guide, hit Next. (The positions table stays sealed until you continue.)',
+    target: null,
+    cat: 'Congrats! Order form complete. Review, then continue when ready.'
+  },
+  {
     title: 'Sprint 3: Partial Close',
     text: 'In the Positions table (bottom), click “Close”. A Market Close popup appears. Drag the size slider to a partial amount and hit Market Close. Next unlocks after you confirm.',
     target: '.bottom',
     preview: 'Close',
     require: 'partial',
-    cat: 'Open Market Close and close part of it.'
+    cat: 'Open Market Close and close part of it.',
+    onEnter: 'unlockPositions'
   },
   {
     title: 'Sprint 3: Full Close (Chart)',
@@ -672,6 +689,7 @@ let fullDone = false;
 let orderPlaced = false;
 let bridgeDone = false;
 let guidePaused = false;
+let hypurrUserMoved = false;
 let closingPositionId = null;
 
 function startGuide() {
@@ -692,10 +710,13 @@ function closeGuide() {
   if (mr) mr.classList.remove('glow');
   const hypurr = document.getElementById('hypurr');
   hypurr.classList.remove('with-guide');
-  hypurr.style.left = '';
-  hypurr.style.top = '';
-  hypurr.style.right = '20px';
-  hypurr.style.bottom = '20px';
+  // Only reset position if the user never dragged it
+  if (!hypurrUserMoved) {
+    hypurr.style.left = '';
+    hypurr.style.top = '';
+    hypurr.style.right = '20px';
+    hypurr.style.bottom = '20px';
+  }
 }
 function nextGuide() {
   if (state.guideStep >= guideSteps.length - 1) {
@@ -769,6 +790,10 @@ function showGuideStep() {
   if (mr) mr.classList.remove('glow');
 
   if (s.onEnter === 'seed') seedDemoPosition();
+  if (s.onEnter === 'unlockPositions') {
+    const seal = document.getElementById('positionsSeal');
+    if (seal) seal.classList.add('unlocked');
+  }
   if (s.onEnter === 'tpslDemo') {
     document.getElementById('tpslToggle').checked = true;
     document.getElementById('tpslInputs').style.display = 'block';
@@ -815,12 +840,14 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Hypurr to the right of the guide box, lower, so it never covers text
-  hypurr.classList.add('with-guide');
-  hypurr.style.left = (leftPos + 280) + 'px';
-  hypurr.style.top = (topPos + 160) + 'px';
-  hypurr.style.right = 'auto';
-  hypurr.style.bottom = 'auto';
+  // Hypurr: only auto-position if the user hasn’t dragged it
+  if (!hypurrUserMoved) {
+    hypurr.classList.add('with-guide');
+    hypurr.style.left = (leftPos + 280) + 'px';
+    hypurr.style.top = (topPos + 160) + 'px';
+    hypurr.style.right = 'auto';
+    hypurr.style.bottom = 'auto';
+  }
 
   if (s.target) {
     const el = document.querySelector(s.target);
