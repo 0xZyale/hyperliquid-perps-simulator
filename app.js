@@ -702,6 +702,7 @@ function bindEvents() {
     document.getElementById('orderTypeMarket').classList.add('secondary');
     document.getElementById('limitRow').style.display = 'flex';
     updateLimitHint();
+    if (typeof checkStepProgress === 'function') checkStepProgress();
   };
   document.getElementById('limitPct').oninput = updateLimitHint;
 
@@ -1108,7 +1109,13 @@ function showGuideStep() {
       const r = el.getBoundingClientRect();
       const boxW = 360, boxH = 220;
       // Prefer placing the guide just left of the target, or above if near bottom
-      if (r.left > boxW + 40) {
+      // Order panel targets: keep the guide left of the panel so it never covers the form
+      const panel = document.querySelector('.order-panel');
+      if (panel && el.closest('.order-panel')) {
+        const pr = panel.getBoundingClientRect();
+        leftPos = Math.max(20, pr.left - boxW - 16);
+        topPos = Math.max(70, Math.min(r.top, window.innerHeight - boxH - 20));
+      } else if (r.left > boxW + 40) {
         leftPos = r.left - boxW - 16;
         topPos = Math.max(70, Math.min(r.top, window.innerHeight - boxH - 20));
       } else if (r.top > boxH + 80) {
