@@ -21,6 +21,7 @@ const markets = {
   'ZEC-USDC': { price: 48, precision: 2, binance: 'ZECUSDT' },
   'SOL-USDC': { price: 185, precision: 2, binance: 'SOLUSDT' }
 };
+let currentMarket = 'BTC-USDC';
 let limitOrders = []; // {id, market, side, price, size}
 let orderType = 'market';
 let candleInterval = 60; // seconds per candle (15m=900, 1h=3600, 4h=14400 for display spacing)
