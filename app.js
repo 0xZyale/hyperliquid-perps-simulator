@@ -45,15 +45,7 @@ function initChart() {
     state.chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
   }).observe(container);
 
-  container.addEventListener('click', () => {
-    const pos = state.positions.find(p => p.market === currentMarket);
-    if (pos && document.getElementById('guideOverlay').classList.contains('active')) {
-      const step = guideSteps[state.guideStep];
-      if (step && step.require === 'full') {
-        closePosition(pos.id);
-      }
-    }
-  });
+  // Chart click no longer closes — use the X on the position line instead
 }
 
 function generateCandles(startPrice, count) {
@@ -101,6 +93,10 @@ function updatePositionLine() {
     state.candleSeries.removePriceLine(state.priceLine);
     state.priceLine = null;
   }
+  // Remove old close-X if present
+  const oldX = document.getElementById('posLineX');
+  if (oldX) oldX.remove();
+
   const pos = state.positions.find(p => p.market === currentMarket);
   if (pos) {
     state.priceLine = state.candleSeries.createPriceLine({
@@ -111,6 +107,18 @@ function updatePositionLine() {
       axisLabelVisible: true,
       title: `${pos.side.toUpperCase()} @ ${pos.entry.toFixed(1)}`
     });
+    // Add an X button near the right edge of the chart that opens Market Close
+    const chartEl = document.getElementById('chart');
+    const xBtn = document.createElement('div');
+    xBtn.id = 'posLineX';
+    xBtn.className = 'pos-line-x';
+    xBtn.title = 'Close position';
+    xBtn.textContent = '✕';
+    xBtn.onclick = (e) => {
+      e.stopPropagation();
+      openCloseModal(pos.id);
+    };
+    chartEl.appendChild(xBtn);
   }
 }
 
@@ -493,7 +501,27 @@ function bindEvents() {
   };
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
-  document.getElementById('guideSkip').onclick = closeGuide;
+  // Floating tooltips that stay on-screen
+  const tip = document.getElementById('tooltipFloat');
+  document.body.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('[data-tooltip]');
+    if (!el) return;
+    const text = el.getAttribute('data-tooltip');
+    if (!text) return;
+    tip.textContent = text;
+    tip.style.display = 'block';
+    const r = el.getBoundingClientRect();
+    let left = r.left + r.width / 2 - tip.offsetWidth / 2;
+    let top = r.top - tip.offsetHeight - 8;
+    if (top < 8) top = r.bottom + 8;
+    if (left < 8) left = 8;
+    if (left + tip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tip.offsetWidth - 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  });
+  document.body.addEventListener('mouseout', (e) => {
+    if (!e.target.closest('[data-tooltip]')) tip.style.display = 'none';
+  });
   document.getElementById('guidePause').onclick = () => {
     guidePaused = !guidePaused;
     const overlay = document.getElementById('guideOverlay');
@@ -659,11 +687,11 @@ const guideSteps = [
   },
   {
     title: 'Sprint 3: Full Close (Chart)',
-    text: 'Click the green entry line or anywhere on the chart to close the remaining position. The guide box is moved aside so it doesn’t block the chart.',
+    text: 'Click the ✕ on the green entry line (right side of the chart). That opens the Market Close popup. Choose the size and confirm. Clicking the line itself does not close.',
     target: '#chart',
-    preview: 'Chart',
+    preview: '✕ on line',
     require: 'full',
-    cat: 'Click the chart / entry line to close the rest.'
+    cat: 'Click the ✕ on the position line to open Market Close.'
   },
   {
     title: 'Sprint 3: TP / SL',
@@ -840,14 +868,16 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Hypurr: only auto-position if the user hasn’t dragged it
-  if (!hypurrUserMoved) {
-    hypurr.classList.add('with-guide');
-    hypurr.style.left = (leftPos + 280) + 'px';
-    hypurr.style.top = (topPos + 160) + 'px';
-    hypurr.style.right = 'auto';
-    hypurr.style.bottom = 'auto';
-  }
+  // Hypurr: always place near the guide (area of interest), offset so it doesn't cover text
+  hypurr.classList.add('with-guide');
+  hypurr.style.left = Math.min(leftPos + 300, window.innerWidth - 280) + 'px';
+  hypurr.style.top = Math.min(topPos + 140, window.innerHeight - 100) + 'px';
+  hypurr.style.right = 'auto';
+  hypurr.style.bottom = 'auto';
+
+  // Close any open leverage popover so it doesn't cover the guide
+  const pop = document.getElementById('leveragePopover');
+  if (pop) pop.style.display = 'none';
 
   if (s.target) {
     const el = document.querySelector(s.target);
