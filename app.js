@@ -490,7 +490,10 @@ function bindEvents() {
   });
 
   // Guide
-  document.getElementById('guideBtn').onclick = startGuide;
+  document.getElementById('pythMode').onchange = (e) => {
+    if (e.target.checked) startPyth();
+    else stopPyth();
+  };
   document.getElementById('hypurrCat').onclick = () => {
     if (!document.getElementById('guideOverlay').classList.contains('active')) {
       const tip = hypurrTips[Math.floor(Math.random() * hypurrTips.length)];
@@ -875,10 +878,11 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Hypurr: always place near the guide (area of interest), offset so it doesn't cover text
+  // Hypurr: place one guide-length below the guide, offset so the bubble never overlaps
+  const guideH = 220;
   hypurr.classList.add('with-guide');
-  hypurr.style.left = Math.min(leftPos + 300, window.innerWidth - 280) + 'px';
-  hypurr.style.top = Math.min(topPos + 140, window.innerHeight - 100) + 'px';
+  hypurr.style.left = Math.max(20, leftPos) + 'px';
+  hypurr.style.top = Math.min(topPos + guideH + 24, window.innerHeight - 90) + 'px';
   hypurr.style.right = 'auto';
   hypurr.style.bottom = 'auto';
 
@@ -933,8 +937,45 @@ function showGuideStep() {
   checkStepProgress();
 }
 
-// ---------- Price Simulation ----------
+// ---------- Pyth prices ----------
+const PYTH_BTC = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43';
+let pythTimer = null;
+
+async function fetchPythPrice() {
+  try {
+    const url = `https://hermes.pyth.network/v2/updates/price/latest?ids[]=${PYTH_BTC}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Pyth ' + res.status);
+    const data = await res.json();
+    const parsed = data.parsed && data.parsed[0];
+    if (!parsed || !parsed.price) throw new Error('no price');
+    const raw = Number(parsed.price.price);
+    const expo = parsed.price.expo;
+    const price = raw * Math.pow(10, expo);
+    if (price > 0) {
+      state.price = price;
+      updateChart(state.price);
+      updateUI();
+    }
+  } catch (err) {
+    console.warn('Pyth fetch failed', err);
+    showToast('Pyth unavailable — using simulated prices');
+    document.getElementById('pythMode').checked = false;
+    stopPyth();
+  }
+}
+function startPyth() {
+  stopPyth();
+  fetchPythPrice();
+  pythTimer = setInterval(fetchPythPrice, 5000);
+}
+function stopPyth() {
+  if (pythTimer) clearInterval(pythTimer);
+  pythTimer = null;
+}
+
 function tick() {
+  if (document.getElementById('pythMode') && document.getElementById('pythMode').checked) return;
   const drift = (Math.random() - 0.5) * state.price * 0.0004;
   state.price = Math.max(100, state.price + drift);
   updateChart(state.price);
