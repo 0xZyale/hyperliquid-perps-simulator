@@ -832,9 +832,10 @@ const guideSteps = [
   },
   {
     title: 'Bridge complete — nice work',
-    text: 'Funds are arriving / arrived. Take a moment to look around the platform. When you’re ready, hit Next to start the order form.',
+    text: 'Sprint 1 is done. Funds are in. Take a break and look around. When you’re ready for the order form, use Jump to… or Start Guide.',
     target: null,
-    cat: 'Congrats on bridging! Funds are in. Look around, then continue.'
+    cat: 'Sprint 1 complete. Take a break, then jump to Sprint 2.',
+    endSprint: true
   },
   {
     title: 'Sprint 2: Order Form — Leverage',
@@ -872,9 +873,10 @@ const guideSteps = [
   },
   {
     title: 'Order form done — nice work',
-    text: 'You finished the order form. Take a moment to review the position you just opened. When you’re ready for the positions table guide, hit Next. (The positions table stays sealed until you continue.)',
+    text: 'Sprint 2 is done. Review the position you opened. When you’re ready for position management, use Jump to… Sprint 3.',
     target: null,
-    cat: 'Congrats! Order form complete. Review, then continue when ready.'
+    cat: 'Sprint 2 complete. Take a break, then jump to Sprint 3.',
+    endSprint: true
   },
   {
     title: 'Sprint 3: Partial Close',
@@ -928,9 +930,10 @@ const guideSteps = [
   },
   {
     title: 'Done',
-    text: 'You finished the three mini sprints: Bridge → Order form → Position management. Same flow on the real Hyperliquid app. You can Pause / Unblackout anytime to explore freely.',
+    text: 'Sprint 3 is done. You finished Bridge → Order form → Position management. Same flow on the real Hyperliquid app. Jump to… anytime to revisit.',
     target: null,
-    cat: 'Minimize losses, maximize gains. You’re ready.'
+    cat: 'Sprint 3 complete. Minimize losses, maximize gains.',
+    endSprint: true
   }
 ];
 
@@ -972,6 +975,12 @@ function closeGuide() {
   }
 }
 function nextGuide() {
+  const s = guideSteps[state.guideStep];
+  if (s && s.endSprint) {
+    closeGuide();
+    showToast(s.cat || 'Sprint complete. Take a break.');
+    return;
+  }
   if (state.guideStep >= guideSteps.length - 1) {
     closeGuide();
     return;
@@ -990,7 +999,7 @@ function checkStepProgress() {
   if (!s || !s.require) {
     nextBtn.disabled = false;
     nextBtn.style.opacity = '1';
-    nextBtn.textContent = state.guideStep === guideSteps.length - 1 ? 'Finish' : 'Next';
+    nextBtn.textContent = s && s.endSprint ? 'End Sprint' : (state.guideStep === guideSteps.length - 1 ? 'Finish' : 'Next');
     return;
   }
   let ok = false;
