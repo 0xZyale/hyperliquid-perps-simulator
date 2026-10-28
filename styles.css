@@ -376,6 +376,7 @@ input[type="number"], input[type="text"], select {
   pointer-events: none;
   bottom: 20px;
   right: 20px;
+  user-select: none;
 }
 .hypurr-cat {
   width: 64px;
@@ -384,7 +385,7 @@ input[type="number"], input[type="text"], select {
   filter: drop-shadow(0 4px 8px rgba(0,212,177,0.4));
   animation: hypurrBounce 2.5s ease-in-out infinite;
   pointer-events: auto;
-  cursor: pointer;
+  cursor: grab;
   border-radius: 50%;
   background: #0b0e11;
 }

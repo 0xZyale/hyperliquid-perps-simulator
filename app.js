@@ -494,6 +494,41 @@ function bindEvents() {
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
   document.getElementById('guideSkip').onclick = closeGuide;
+  document.getElementById('guidePause').onclick = () => {
+    guidePaused = !guidePaused;
+    const overlay = document.getElementById('guideOverlay');
+    const spot = document.getElementById('spotlight');
+    if (guidePaused) {
+      spot.style.display = 'none';
+      overlay.style.pointerEvents = 'none';
+      document.getElementById('guidePause').textContent = 'Resume';
+      hypurrSay('Paused — blackout removed. Interact freely, then hit Resume.', 0);
+    } else {
+      overlay.style.pointerEvents = '';
+      document.getElementById('guidePause').textContent = 'Pause / Unblackout';
+      showGuideStep();
+    }
+  };
+
+  // Make Hypurr draggable
+  const hypurrEl = document.getElementById('hypurr');
+  let dragging = false, dragOffX = 0, dragOffY = 0;
+  hypurrEl.addEventListener('mousedown', (e) => {
+    if (e.target.id === 'hypurrBubble') return;
+    dragging = true;
+    const r = hypurrEl.getBoundingClientRect();
+    dragOffX = e.clientX - r.left;
+    dragOffY = e.clientY - r.top;
+    hypurrEl.style.cursor = 'grabbing';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    hypurrEl.style.left = (e.clientX - dragOffX) + 'px';
+    hypurrEl.style.top = (e.clientY - dragOffY) + 'px';
+    hypurrEl.style.right = 'auto';
+    hypurrEl.style.bottom = 'auto';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; hypurrEl.style.cursor = ''; });
 }
 
 function openDeposit() {
@@ -522,7 +557,9 @@ function startBridge(amount) {
       state.balance += amount;
       text.innerHTML = `<strong>Bridge complete</strong><br>$${amount} USDC now available as margin.`;
       updateUI();
+      bridgeDone = true;
       hypurrSay(`Bridge done! $${amount} is now available margin.`, 3000);
+      if (typeof checkStepProgress === 'function') checkStepProgress();
       setTimeout(() => item.remove(), 3000);
     }
   }, 1000);
@@ -556,78 +593,73 @@ function hypurrSay(text, duration = 0) {
 }
 const guideSteps = [
   {
-    title: 'Welcome',
-    text: 'Hey, I’m Hypurr. This is a safe practice version of the Hyperliquid perps UI. I’ll walk you through deposits, leverage, margin mode, and closing positions.',
-    target: null,
-    cat: 'Meow. Ready when you are.'
-  },
-  {
-    title: '1. Deposit Margin',
-    text: 'Click Deposit in the top-right (same spot as the real app). Bridging takes ~10s for security. Watch the notification circle.',
+    title: 'Sprint 1: Bridge Funds',
+    text: 'First thing: you need margin. Click Deposit (top-right). Bridging takes ~10s for security. Next stays locked until funds arrive.',
     target: '#depositHeaderBtn',
     preview: 'Deposit',
-    cat: 'Deposit lives top-right. Bridge takes a moment.'
+    require: 'bridge',
+    cat: 'Bridge first. No funds = no trade.'
   },
   {
-    title: '2. Set Leverage',
-    text: 'Click the leverage box (Hyperliquid-style). Different perps have different max leverage — BTC can go up to 50x, most alts are lower. Notional = margin × leverage. Change it — Next unlocks only after you move the slider.',
+    title: 'Sprint 2: Order Form — Leverage',
+    text: 'Funds are in. Click the Leverage box. Different perps have different max leverage (BTC up to 50x, most alts lower). Move the slider — Next unlocks after you change it.',
     target: '#leverageBox',
     preview: 'Leverage',
     require: 'leverage',
-    cat: 'Higher leverage = less margin, closer liq. Different markets have different maxes.'
+    cat: 'Set leverage. Higher = less margin, closer liq.'
   },
   {
-    title: '3. Commit Margin',
-    text: 'Drag the % Margin slider. The Margin Required number will glow so you see what you’re committing.',
+    title: 'Sprint 2: Commit Margin',
+    text: 'Drag the % Margin slider. The Margin Required number glows so you see what you’re committing. Next unlocks once you’ve set a size.',
     target: '#pctSlider',
     preview: '% Margin',
     require: 'margin',
     cat: 'Commit some margin. Watch the glowing number.'
   },
   {
-    title: '4. Cross vs Isolated',
-    text: 'Cross uses your whole balance as shared margin (riskier if other trades lose). Isolated only risks the margin on this single trade. Click the other mode button — Next unlocks once you switch.',
+    title: 'Sprint 2: Cross vs Isolated',
+    text: 'Cross uses your whole balance as shared margin. Isolated only risks the margin on this trade. Switch modes — Next unlocks once you do.',
     target: '#modeToggle',
     preview: 'Cross / Isolated',
     require: 'mode',
-    cat: 'Flip Cross ↔ Isolated. Feel the difference in risk.'
+    cat: 'Flip Cross ↔ Isolated.'
   },
   {
-    title: '5. Place a Trade',
-    text: 'Enter a size (or use the % Margin slider) and click Place Order. This opens a real position you’ll use for the close practice next.',
+    title: 'Sprint 2: Place the Trade',
+    text: 'Click Place Order. This opens the position you’ll manage next. (You already have margin from the bridge.)',
     target: '#placeOrder',
     preview: 'Place Order',
     require: 'order',
-    cat: 'Place an order first — then we’ll practice closing it.'
+    cat: 'Place the order now.'
   },
   {
-    title: '6. Partial Close (Market Close modal)',
-    text: 'In the Positions table, click “Close” on your row. A Market Close popup appears (same idea as Hyperliquid). Drag the size slider to a partial amount and hit Market Close. Next unlocks after you confirm.',
+    title: 'Sprint 3: Partial Close',
+    text: 'In the Positions table (bottom), click “Close”. A Market Close popup appears. Drag the size slider to a partial amount and hit Market Close. Next unlocks after you confirm.',
     target: '.bottom',
     preview: 'Close',
     require: 'partial',
-    cat: 'Open the Market Close popup and close part of the position.'
+    cat: 'Open Market Close and close part of it.'
   },
   {
-    title: '7. Full Close (from Chart)',
-    text: 'Click anywhere on the chart while this step is active. That closes the remaining position (same idea as clicking the entry line on the real app).',
+    title: 'Sprint 3: Full Close (Chart)',
+    text: 'Click the green entry line or anywhere on the chart to close the remaining position. The guide box is moved aside so it doesn’t block the chart.',
     target: '#chart',
-    preview: 'Chart click',
+    preview: 'Chart',
     require: 'full',
-    cat: 'Now click the chart to close the rest. On real HL you click the line.'
+    cat: 'Click the chart / entry line to close the rest.'
   },
   {
-    title: '8. Take Profit & Stop Loss',
-    text: 'Check “Take Profit / Stop Loss”. Set a TP above entry and a tight SL below. The chart shows arrows where price must go to hit each. Keep the SL price % small — that limits the loss. Higher leverage multiplies that price % into a larger % of your margin (e.g. 1% price move at 10x = 10% of margin). Trading is about minimizing losses while letting winners run.',
+    title: 'Sprint 3: TP / SL',
+    text: 'Check “Take Profit / Stop Loss”. Set a TP above entry and a tight SL below (price or % fields both work). Higher leverage multiplies the price % into a larger % of margin. Trading is about minimizing losses while letting winners run.',
     target: '#tpslBox',
     preview: 'TP / SL',
     require: 'tpsl',
-    cat: 'Tight SL protects you. Leverage multiplies the pain if you don’t.',
+    cat: 'Tight SL protects you. Leverage multiplies the pain.',
     onEnter: 'tpslDemo'
   },
   {
-    title: 'You’re Ready',
-    text: 'You practiced: Deposit → leverage → margin → Cross/Isolated → partial close → full close → TP/SL. Core idea: define risk first (tight SL), size so a stop doesn’t hurt, and let gains run. Same on the real Hyperliquid app.',
+    title: 'Done',
+    text: 'You finished the three mini sprints: Bridge → Order form → Position management. Same flow on the real Hyperliquid app. You can Pause / Unblackout anytime to explore freely.',
     target: null,
     cat: 'Minimize losses, maximize gains. You’re ready.'
   }
@@ -638,6 +670,8 @@ let modeStart = true;
 let partialDone = false;
 let fullDone = false;
 let orderPlaced = false;
+let bridgeDone = false;
+let guidePaused = false;
 let closingPositionId = null;
 
 function startGuide() {
@@ -686,7 +720,9 @@ function checkStepProgress() {
     return;
   }
   let ok = false;
-  if (s.require === 'leverage') {
+  if (s.require === 'bridge') {
+    ok = bridgeDone || state.balance > 0;
+  } else if (s.require === 'leverage') {
     ok = +document.getElementById('leverageSlider').value !== leverageStart;
   } else if (s.require === 'margin') {
     ok = +document.getElementById('pctSlider').value > 0;
@@ -743,21 +779,46 @@ function showGuideStep() {
     updateTpslPct();
   }
 
-  // Position guide box near the order panel (right side) and put Hypurr beside it
-  const orderPanel = document.querySelector('.order-panel');
-  const opRect = orderPanel ? orderPanel.getBoundingClientRect() : { left: window.innerWidth - 340, top: 60 };
-  const boxWidth = 360;
-  const leftPos = Math.max(20, opRect.left - boxWidth - 16);
-  const topPos = Math.max(70, Math.min(opRect.top + 20, window.innerHeight - 280));
+  // Position guide near the target (or order panel as fallback)
+  let leftPos = 40, topPos = 80;
+
+  if (s.target) {
+    const el = document.querySelector(s.target);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const boxW = 360, boxH = 220;
+      // Prefer placing the guide just left of the target, or above if near bottom
+      if (r.left > boxW + 40) {
+        leftPos = r.left - boxW - 16;
+        topPos = Math.max(70, Math.min(r.top, window.innerHeight - boxH - 20));
+      } else if (r.top > boxH + 80) {
+        leftPos = Math.max(20, r.left);
+        topPos = r.top - boxH - 16;
+      } else {
+        leftPos = Math.max(20, r.right + 16);
+        topPos = Math.max(70, r.top);
+      }
+      // Chart step: keep guide on the right so chart stays free
+      if (s.target === '#chart') {
+        leftPos = window.innerWidth - boxW - 40;
+        topPos = 80;
+      }
+      // Bottom panel (positions): place guide above it
+      if (s.target === '.bottom') {
+        leftPos = Math.max(20, r.left + 20);
+        topPos = Math.max(70, r.top - boxH - 16);
+      }
+    }
+  }
   guideBox.style.left = leftPos + 'px';
   guideBox.style.top = topPos + 'px';
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Place Hypurr below the guide box so it never covers the text
+  // Hypurr to the right of the guide box, lower, so it never covers text
   hypurr.classList.add('with-guide');
-  hypurr.style.left = (leftPos + 8) + 'px';
-  hypurr.style.top = (topPos + 200) + 'px';
+  hypurr.style.left = (leftPos + 280) + 'px';
+  hypurr.style.top = (topPos + 160) + 'px';
   hypurr.style.right = 'auto';
   hypurr.style.bottom = 'auto';
 
