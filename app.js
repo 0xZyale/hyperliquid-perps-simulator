@@ -889,7 +889,8 @@ const guideSteps = [
     title: 'Sprint 3: Full Close (Chart)',
     text: 'Click the ✕ on the green entry line (right side of the chart). That opens the Market Close popup. Choose the size and confirm. Clicking the line itself does not close.',
     target: '#chart',
-    preview: '✕ on line',
+    preview: 'lineX',
+    previewHtml: true,
     require: 'full',
     cat: 'Click the ✕ on the position line to open Market Close.'
   },
@@ -1033,11 +1034,23 @@ function showGuideStep() {
   const preview = document.getElementById('guidePreview');
   preview.innerHTML = '';
   if (s.preview) {
-    const btn = document.createElement('button');
-    btn.className = 'btn preview-btn';
-    btn.textContent = s.preview;
-    preview.appendChild(btn);
-    preview.appendChild(document.createTextNode(' ← look for this'));
+    if (s.previewHtml && s.preview === 'lineX') {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; align-items:center; gap:6px; background:#12161c; padding:6px 10px; border-radius:6px; border:1px solid #21262d;';
+      wrap.innerHTML = `
+        <div style="width:80px; height:0; border-top:2px dashed #00c853;"></div>
+        <span style="background:#00c853; color:#000; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px;">LONG @ ${state.price.toFixed(0)}</span>
+        <div style="width:20px; height:20px; background:#ff5252; color:#fff; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;">✕</div>
+      `;
+      preview.appendChild(wrap);
+      preview.appendChild(document.createTextNode(' ← look for this'));
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'btn preview-btn';
+      btn.textContent = s.preview;
+      preview.appendChild(btn);
+      preview.appendChild(document.createTextNode(' ← look for this'));
+    }
   }
 
   const spot = document.getElementById('spotlight');
