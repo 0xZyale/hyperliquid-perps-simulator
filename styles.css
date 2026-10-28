@@ -290,20 +290,24 @@ input[type="number"], input[type="text"], select {
 .notif-text strong { color: var(--accent); }
 
 /* Tooltips — floating, never clipped */
-.tooltip-float {
-  position: fixed;
-  z-index: 4000;
-  background: #1a1f26;
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 6px;
+.tooltip-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
-  max-width: 240px;
-  border: 1px solid #00d4b1;
-  pointer-events: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-  line-height: 1.4;
-  display: none;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.tooltip-toggle input { cursor: pointer; }
+.margin-standout {
+  position: relative;
+  z-index: 1100;
+  background: #1a3a32 !important;
+  border: 2px solid #00d4b1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  box-shadow: 0 0 16px rgba(0,212,177,0.8);
 }
 .guide-arrow {
   position: fixed;

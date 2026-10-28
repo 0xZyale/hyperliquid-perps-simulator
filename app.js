@@ -501,25 +501,32 @@ function bindEvents() {
   };
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
-  // Floating tooltips that stay on-screen
+  // Floating tooltips — only after 1s hover, and only if tooltip mode is on
   const tip = document.getElementById('tooltipFloat');
+  let tipTimer = null;
   document.body.addEventListener('mouseover', (e) => {
+    clearTimeout(tipTimer);
+    tip.style.display = 'none';
+    if (!document.getElementById('tooltipMode').checked) return;
     const el = e.target.closest('[data-tooltip]');
     if (!el) return;
     const text = el.getAttribute('data-tooltip');
     if (!text) return;
-    tip.textContent = text;
-    tip.style.display = 'block';
-    const r = el.getBoundingClientRect();
-    let left = r.left + r.width / 2 - tip.offsetWidth / 2;
-    let top = r.top - tip.offsetHeight - 8;
-    if (top < 8) top = r.bottom + 8;
-    if (left < 8) left = 8;
-    if (left + tip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tip.offsetWidth - 8;
-    tip.style.left = left + 'px';
-    tip.style.top = top + 'px';
+    tipTimer = setTimeout(() => {
+      tip.textContent = text;
+      tip.style.display = 'block';
+      const r = el.getBoundingClientRect();
+      let left = r.left + r.width / 2 - tip.offsetWidth / 2;
+      let top = r.top - tip.offsetHeight - 8;
+      if (top < 8) top = r.bottom + 8;
+      if (left < 8) left = 8;
+      if (left + tip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tip.offsetWidth - 8;
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }, 1000);
   });
   document.body.addEventListener('mouseout', (e) => {
+    clearTimeout(tipTimer);
     if (!e.target.closest('[data-tooltip]')) tip.style.display = 'none';
   });
   document.getElementById('guidePause').onclick = () => {
@@ -882,7 +889,22 @@ function showGuideStep() {
   if (s.target) {
     const el = document.querySelector(s.target);
     if (el) {
-      const r = el.getBoundingClientRect();
+      let r = el.getBoundingClientRect();
+      // On margin step, expand the hole to also cover the Margin Required box
+      if (s.require === 'margin') {
+        const calc = document.getElementById('calcBox');
+        if (calc) {
+          const cr = calc.getBoundingClientRect();
+          r = {
+            left: Math.min(r.left, cr.left),
+            top: Math.min(r.top, cr.top),
+            right: Math.max(r.right, cr.right),
+            bottom: Math.max(r.bottom, cr.bottom),
+            width: Math.max(r.right, cr.right) - Math.min(r.left, cr.left),
+            height: Math.max(r.bottom, cr.bottom) - Math.min(r.top, cr.top)
+          };
+        }
+      }
       const pad = 8;
       spot.style.display = 'block';
       spot.style.left = (r.left - pad) + 'px';
@@ -900,7 +922,14 @@ function showGuideStep() {
     arrow.style.display = 'none';
   }
 
-  if (s.require === 'margin' && mr) mr.classList.add('glow');
+  if (s.require === 'margin' && mr) {
+    mr.classList.add('glow');
+    const calc = document.getElementById('calcBox');
+    if (calc) calc.classList.add('margin-standout');
+  } else {
+    const calc = document.getElementById('calcBox');
+    if (calc) calc.classList.remove('margin-standout');
+  }
   checkStepProgress();
 }
 
