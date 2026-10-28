@@ -36,8 +36,15 @@
         <input type="checkbox" id="pythMode" checked> Live price
       </label>
       <button class="btn secondary" id="guideBtn">Start Guide</button>
+      <select id="guideJump" class="btn secondary" style="font-size:12px;" title="Jump to a sprint">
+        <option value="">Jump to…</option>
+        <option value="0">Sprint 0: Connect</option>
+        <option value="1">Sprint 1: Bridge</option>
+        <option value="3">Sprint 2: Order Form</option>
+        <option value="8">Sprint 3: Positions</option>
+      </select>
       <button class="btn" id="depositHeaderBtn" data-tooltip="Bridge USDC onto Hyperliquid (simulated). Funds become available margin after confirmation.">Deposit</button>
-      <button class="btn" id="connectBtn">Connect</button>
+      <button class="btn" id="connectBtn" data-tooltip="Connect an EVM wallet (Rabby or MetaMask). Simulated.">Connect</button>
     </div>
   </header>
 
@@ -112,12 +119,14 @@
           <div class="tpsl-row">
             <label>TP</label>
             <input type="number" id="tpPrice" placeholder="Price" step="0.1">
-            <input type="number" id="tpPctInput" class="tpsl-pct-input" placeholder="%" step="0.1">
+            <input type="number" id="tpPctInput" class="tpsl-pct-input" placeholder="0" step="0.1">
+            <span class="tpsl-pct-label">%</span>
           </div>
           <div class="tpsl-row">
             <label>SL</label>
             <input type="number" id="slPrice" placeholder="Price" step="0.1">
-            <input type="number" id="slPctInput" class="tpsl-pct-input" placeholder="%" step="0.1">
+            <input type="number" id="slPctInput" class="tpsl-pct-input" placeholder="0" step="0.1">
+            <span class="tpsl-pct-label">%</span>
           </div>
         </div>
       </div>
@@ -203,12 +212,6 @@
       <div id="guidePreview" class="guide-preview"></div>
       <p id="guideText"></p>
       <div class="guide-actions">
-        <select id="guideJump" class="btn secondary" style="font-size:12px;">
-          <option value="">Jump to…</option>
-          <option value="0">Sprint 1: Bridge</option>
-          <option value="2">Sprint 2: Order Form</option>
-          <option value="7">Sprint 3: Positions</option>
-        </select>
         <button class="btn secondary" id="guideBack">Back</button>
         <button class="btn secondary" id="guidePause">Pause / Unblackout</button>
         <button class="btn secondary" id="guideSkip">Skip</button>

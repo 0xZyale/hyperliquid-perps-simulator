@@ -204,11 +204,10 @@ input[type="number"], input[type="text"], select {
 }
 .tpsl-row label { width: 24px; color: var(--muted); font-size: 12px; }
 .tpsl-row input { flex: 1; min-width: 0; }
-.tpsl-pct-input {
-  max-width: 70px;
-  flex: 0 0 70px;
-  text-align: right;
+.tpsl-pct-label {
+  color: var(--muted);
   font-size: 12px;
+  min-width: 16px;
 }
 .leverage-popover input[type="range"] { width: 100%; }
 .side-btns { display: flex; gap: 8px; margin: 8px 0; }

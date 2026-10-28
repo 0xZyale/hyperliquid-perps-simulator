@@ -495,6 +495,12 @@ function bindEvents() {
   });
 
   // Guide
+  document.getElementById('connectBtn').onclick = () => {
+    connected = true;
+    document.getElementById('connectBtn').textContent = '0x1a2b…3c4d';
+    hypurrSay('Connected via Rabby / MetaMask (simulated). EVM wallet linked.', 3000);
+    if (typeof checkStepProgress === 'function') checkStepProgress();
+  };
   document.getElementById('pythMode').onchange = (e) => {
     if (e.target.checked) startPyth();
     else stopPyth();
@@ -554,7 +560,7 @@ function bindEvents() {
   };
   document.getElementById('guideSkip').onclick = () => {
     // Skip jumps to the next sprint start
-    const jumps = [2, 2, 7, 7, 7, 7, 7, 10, 10, 10, 10];
+    const jumps = [1, 3, 3, 8, 8, 8, 8, 8, 11, 11, 11, 11];
     const next = jumps[state.guideStep] ?? state.guideStep + 1;
     if (next >= guideSteps.length) {
       closeGuide();
@@ -658,12 +664,20 @@ function hypurrSay(text, duration = 0) {
 }
 const guideSteps = [
   {
+    title: 'Sprint 0: Connect Wallet',
+    text: 'Hyperliquid is an EVM app. Click Connect to link a Rabby or MetaMask wallet (simulated). This is not a Solana site — no Jupiter.',
+    target: '#connectBtn',
+    preview: 'Connect',
+    require: 'connect',
+    cat: 'Connect Rabby or MetaMask first. EVM only.'
+  },
+  {
     title: 'Sprint 1: Bridge Funds',
-    text: 'First thing: you need margin. Click Deposit (top-right). Bridging takes ~10s for security. Next stays locked until funds arrive. Hypurr is your assistant — you can drag me anywhere.',
+    text: 'Wallet is connected. Click Deposit (top-right) to bridge USDC. Bridging takes ~10s for security. Next stays locked until funds arrive. Hypurr is your assistant — you can drag me anywhere.',
     target: '#depositHeaderBtn',
     preview: 'Deposit',
     require: 'bridge',
-    cat: 'Bridge first. No funds = no trade. Drag me if I get in the way.'
+    cat: 'Bridge next. No funds = no trade. Drag me if I get in the way.'
   },
   {
     title: 'Bridge complete — nice work',
@@ -749,6 +763,7 @@ let partialDone = false;
 let fullDone = false;
 let orderPlaced = false;
 let bridgeDone = false;
+let connected = false;
 let guidePaused = false;
 let hypurrUserMoved = false;
 let closingPositionId = null;
@@ -802,7 +817,9 @@ function checkStepProgress() {
     return;
   }
   let ok = false;
-  if (s.require === 'bridge') {
+  if (s.require === 'connect') {
+    ok = connected;
+  } else if (s.require === 'bridge') {
     ok = bridgeDone || state.balance > 0;
   } else if (s.require === 'leverage') {
     ok = +document.getElementById('leverageSlider').value !== leverageStart;
