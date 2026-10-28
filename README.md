@@ -13,8 +13,20 @@ A safe, fully simulated practice environment that mimics the Hyperliquid perpetu
 - Step-by-step overlay guide explaining margin deposits, bridging, leverage/notional, and the interface
 - Everything is local and simulated — no wallet, no blockchain, no real funds
 
-## Deploy
-This is a static web app. Connect the GitHub repo to Vercel for instant hosting, or open index.html locally.
+## How to run
+1. Open a terminal in this folder
+2. Run:
+   ```bash
+   python3 -m http.server 8000
+   ```
+3. Open http://localhost:8000 in your browser
+
+Or simply open `index.html` directly (chart library is included locally).
 
 ## Guide
-Click **Start Guide** for the step-by-step overlay tutorial covering deposits, bridging, leverage & notional, placing a long, and seeing it on the chart + Positions tab.
+Click **Start Guide** in the header (or it auto-starts) for the step-by-step overlay tutorial covering:
+- Depositing margin
+- Bridging concept
+- Leverage & notional size
+- Placing a long and seeing it on the chart + Positions tab
+- Managing and closing positions

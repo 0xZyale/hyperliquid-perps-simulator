@@ -7,7 +7,21 @@
   <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
-  <div class="banner">SIMULATOR MODE — No real funds, no blockchain. Learn margin, leverage & the interface safely.</div>
+  <div class="notif-center" id="notifCenter"></div>
+
+  <!-- Hypurr Mascot -->
+  <div class="hypurr" id="hypurr">
+    <div class="hypurr-bubble" id="hypurrBubble">Hey, I’m Hypurr 🐱 — click me anytime for tips, or hit Start Guide and I’ll walk you through everything.</div>
+    <svg class="hypurr-cat" id="hypurrCat" viewBox="0 0 64 64" title="Hypurr — Hyperliquid mascot">
+      <ellipse cx="32" cy="40" rx="18" ry="16" fill="#00d4b1"/>
+      <polygon points="14,28 22,12 26,28" fill="#00d4b1"/>
+      <polygon points="50,28 42,12 38,28" fill="#00d4b1"/>
+      <ellipse cx="26" cy="38" rx="3" ry="3.5" fill="#0b0e11"/>
+      <ellipse cx="38" cy="38" rx="3" ry="3.5" fill="#0b0e11"/>
+      <ellipse cx="32" cy="46" rx="2" ry="1.5" fill="#0b0e11"/>
+      <path d="M29 46 Q32 49 35 46" stroke="#0b0e11" stroke-width="1.2" fill="none"/>
+    </svg>
+  </div>
   <header>
     <div class="logo">
       <svg viewBox="0 0 32 32" fill="none">
@@ -27,7 +41,7 @@
     </nav>
     <div class="header-right">
       <button class="btn secondary" id="guideBtn">Start Guide</button>
-      <button class="btn" id="depositHeaderBtn">Deposit</button>
+      <button class="btn" id="depositHeaderBtn" data-tooltip="Bridge USDC onto Hyperliquid (simulated). Funds become available margin after confirmation.">Deposit</button>
       <button class="btn" id="connectBtn">Connect</button>
     </div>
   </header>
@@ -55,17 +69,17 @@
     </div>
 
     <div class="order-panel">
-      <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <button class="btn secondary small" id="crossBtn">Cross</button>
-        <button class="btn small" id="isolatedBtn">Isolated</button>
-        <span style="margin-left:auto; color:var(--muted);">Leverage</span>
-        <input type="range" class="leverage-slider" id="leverageSlider" min="1" max="50" value="10">
+      <div style="display:flex; gap:8px; margin-bottom:12px;" id="modeToggle" data-tooltip="Cross shares all margin across positions. Isolated only risks the margin on this trade.">
+        <button class="btn secondary small" id="crossBtn" data-tooltip="Cross margin: your whole balance backs this trade. Higher liquidation risk if other positions lose.">Cross</button>
+        <button class="btn small" id="isolatedBtn" data-tooltip="Isolated margin: only the margin you commit to this position can be liquidated.">Isolated</button>
+        <span style="margin-left:auto; color:var(--muted);" data-tooltip="Multiplier applied to your margin. Notional = margin × leverage.">Leverage</span>
+        <input type="range" class="leverage-slider" id="leverageSlider" min="1" max="50" value="10" data-tooltip="Slide to change leverage. Higher = less margin for same size, closer liquidation.">
         <span id="leverageVal">10x</span>
       </div>
 
       <div class="side-btns">
-        <button class="long" id="longBtn">Buy / Long</button>
-        <button class="short" id="shortBtn">Sell / Short</button>
+        <button class="long" id="longBtn" data-tooltip="Open a long position (profit if price rises).">Buy / Long</button>
+        <button class="short" id="shortBtn" data-tooltip="Open a short position (profit if price falls).">Sell / Short</button>
       </div>
 
       <div class="info-box">
@@ -80,7 +94,7 @@
       </div>
       <div class="row">
         <label>% Margin</label>
-        <input type="range" id="pctSlider" min="0" max="100" value="0" style="flex:1;">
+        <input type="range" id="pctSlider" min="0" max="100" value="0" style="flex:1;" data-tooltip="Percentage of available margin to use for this trade.">
         <span id="pctVal">0%</span>
       </div>
 
@@ -91,7 +105,23 @@
         <div><span>Fees</span><span>0.045% / 0.015%</span></div>
       </div>
 
-      <button class="btn" id="placeOrder" style="width:100%; margin-top:8px;">Place Order</button>
+      <div class="tpsl-box" id="tpslBox">
+        <label><input type="checkbox" id="tpslToggle"> Take Profit / Stop Loss</label>
+        <div class="tpsl-inputs" id="tpslInputs" style="display:none;">
+          <div class="row">
+            <label data-tooltip="Price where the position auto-closes for a gain.">TP</label>
+            <input type="number" id="tpPrice" placeholder="TP price" step="0.1">
+            <span id="tpPct" class="tpsl-pct">—</span>
+          </div>
+          <div class="row">
+            <label data-tooltip="Price where the position auto-closes to limit loss. Keep this tight.">SL</label>
+            <input type="number" id="slPrice" placeholder="SL price" step="0.1">
+            <span id="slPct" class="tpsl-pct">—</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" id="placeOrder" style="width:100%; margin-top:8px;" data-tooltip="Submit the order using the size and leverage shown.">Place Order</button>
       <div style="display:flex; gap:8px; margin-top:8px;">
         <button class="btn secondary" id="depositBtn" style="flex:1;">Deposit</button>
         <button class="btn secondary" style="flex:1;" disabled title="Simulated only">Withdraw</button>
