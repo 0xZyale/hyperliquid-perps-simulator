@@ -21,7 +21,8 @@ const markets = {
   'ZEC-USDC': { price: 48, precision: 2, binance: 'ZECUSDT' },
   'SOL-USDC': { price: 185, precision: 2, binance: 'SOLUSDT' }
 };
-let currentMarket = 'BTC-USDC';
+let limitOrders = []; // {id, market, side, price, size}
+let orderType = 'market';
 let candleInterval = 60; // seconds per candle (15m=900, 1h=3600, 4h=14400 for display spacing)
 
 // ---------- Chart ----------
@@ -268,7 +269,67 @@ function showTpslArrows() {
     chart.appendChild(a);
   }
 }
+function updateLimitHint() {
+  const px = parseFloat(document.getElementById('limitPrice').value);
+  const hint = document.getElementById('limitHint');
+  if (!px || px <= 0) { hint.textContent = '—'; return; }
+  const dist = ((px - state.price) / state.price) * 100;
+  const ok = (state.side === 'long' && px < state.price) || (state.side === 'short' && px > state.price);
+  hint.textContent = dist.toFixed(2) + '%';
+  hint.style.color = ok ? '#00c853' : '#ff5252';
+}
+function placeLimitOrder() {
+  const px = parseFloat(document.getElementById('limitPrice').value);
+  if (!px || px <= 0) return alert('Enter a limit price');
+  const away = Math.abs(px - state.price) / state.price;
+  if (away < 0.001) return alert('Limit must be away from the market (not at the current price).');
+  const size = parseFloat(document.getElementById('sizeInput').value) || 0.01;
+  const id = 'lim-' + Date.now();
+  limitOrders.push({ id, market: currentMarket, side: state.side, price: px, size });
+  drawLimitLine(px, state.side);
+  showToast(`Limit ${state.side} @ ${px} on chart`);
+  hypurrSay(`Limit sits at ${px}. It only fills if price reaches it.`, 3000);
+  window.limitPlaced = true;
+  if (typeof checkStepProgress === 'function') checkStepProgress();
+}
+function drawLimitLine(price, side) {
+  if (!state.candleSeries) return;
+  state.candleSeries.createPriceLine({
+    price,
+    color: side === 'long' ? '#42a5f5' : '#ff9800',
+    lineWidth: 1,
+    lineStyle: LightweightCharts.LineStyle.Dotted,
+    axisLabelVisible: true,
+    title: `LIMIT ${side.toUpperCase()} @ ${price}`
+  });
+}
+function drawSupportResistance() {
+  if (!state.candleSeries) return;
+  const support = state.price * 0.985;
+  const resistance = state.price * 1.015;
+  state.candleSeries.createPriceLine({
+    price: support,
+    color: '#66bb6a',
+    lineWidth: 1,
+    lineStyle: LightweightCharts.LineStyle.Dashed,
+    axisLabelVisible: true,
+    title: 'SUPPORT'
+  });
+  state.candleSeries.createPriceLine({
+    price: resistance,
+    color: '#ef5350',
+    lineWidth: 1,
+    lineStyle: LightweightCharts.LineStyle.Dashed,
+    axisLabelVisible: true,
+    title: 'RESISTANCE'
+  });
+  return { support, resistance };
+}
 function placeOrder() {
+  if (orderType === 'limit') {
+    placeLimitOrder();
+    return;
+  }
   const sizeInput = parseFloat(document.getElementById('sizeInput').value) || 0;
   if (sizeInput <= 0) return alert('Enter a size');
   const unit = document.getElementById('sizeUnit').value;
@@ -605,12 +666,22 @@ function bindEvents() {
       state.candleSeries.setData(candles);
     };
   });
-  document.getElementById('placeLimit').onclick = () => {
-    const px = parseFloat(document.getElementById('limitPrice').value);
-    if (!px || px <= 0) return alert('Enter a limit price');
-    showToast(`Limit ${state.side} placed @ ${px} (simulated)`);
-    hypurrSay(`Limit order set at ${px}. It fills when price reaches it.`, 3000);
+  document.getElementById('orderTypeMarket').onclick = () => {
+    orderType = 'market';
+    document.getElementById('orderTypeMarket').classList.add('btn');
+    document.getElementById('orderTypeMarket').classList.remove('secondary');
+    document.getElementById('orderTypeLimit').classList.add('secondary');
+    document.getElementById('limitRow').style.display = 'none';
   };
+  document.getElementById('orderTypeLimit').onclick = () => {
+    orderType = 'limit';
+    document.getElementById('orderTypeLimit').classList.remove('secondary');
+    document.getElementById('orderTypeMarket').classList.add('secondary');
+    document.getElementById('limitRow').style.display = 'flex';
+    updateLimitHint();
+  };
+  document.getElementById('limitPrice').oninput = updateLimitHint;
+  document.getElementById('placeLimit') && (document.getElementById('placeLimit').onclick = placeLimitOrder);
 
   // Make Hypurr draggable (prevent image ghost-drag)
   const hypurrEl = document.getElementById('hypurr');
@@ -776,13 +847,13 @@ const guideSteps = [
     cat: 'Click the ✕ on the position line to open Market Close.'
   },
   {
-    title: 'Sprint 3: TP / SL + Risk/Reward',
-    text: 'Set TP above entry and a tight SL below. Example: SL at −5% and TP at +15% is a 1:3 risk/reward — you risk 1 to earn 3. Higher leverage multiplies the price % into a larger % of margin. Good trades define the loss first and let the winner pay for several losers.',
+    title: 'Sprint 3: TP / SL + Support / Resistance',
+    text: 'The chart shows a hypothetical support (green) and resistance (red). Place TP at or just under resistance, and SL just beneath support. That way the stop is below the level that should hold, and the target is where price has stalled before. A 1:3 RR (risk 1 to earn 3) is a solid setup.',
     target: '#tpslBox',
     preview: 'TP / SL',
     require: 'tpsl',
-    cat: '1:3 RR — risk 1 to earn 3. Tight SL, wider TP.',
-    onEnter: 'tpslDemo'
+    cat: 'TP at resistance, SL under support. 1:3 RR.',
+    onEnter: 'srDemo'
   },
   {
     title: 'Select an Asset',
@@ -792,11 +863,20 @@ const guideSteps = [
     cat: 'Switch markets. Alts move more than BTC.'
   },
   {
-    title: 'Limit Orders on Alts',
-    text: 'On alts, limit orders let you set the exact price. Enter a limit price and click Limit. The order sits until price reaches it (simulated). Useful for buying dips or selling into strength without chasing.',
-    target: '#placeLimit',
+    title: 'Market → Limit',
+    text: 'Switch the order type from Market to Limit. A limit order only fills at your price or better — it must be away from the current market. For a long, set the limit below the market; for a short, above it.',
+    target: '#orderTypeLimit',
     preview: 'Limit',
-    cat: 'Limit orders fill at your price, not the current one.'
+    require: 'limitType',
+    cat: 'Switch to Limit. Price must be away from market.'
+  },
+  {
+    title: 'Place the Limit',
+    text: 'Enter a limit price away from the market and click Place Order (or the Limit flow). The limit appears as a dotted line on the chart. It sits there until price reaches it. Debrief: limits let you buy dips or sell strength without chasing.',
+    target: '#limitPrice',
+    preview: 'Limit price',
+    require: 'limitPlaced',
+    cat: 'Set a limit away from market. Watch it appear on the chart.'
   },
   {
     title: 'Done',
@@ -882,6 +962,10 @@ function checkStepProgress() {
     ok = partialDone;
   } else if (s.require === 'full') {
     ok = fullDone || state.positions.length === 0;
+  } else if (s.require === 'limitType') {
+    ok = orderType === 'limit';
+  } else if (s.require === 'limitPlaced') {
+    ok = window.limitPlaced === true;
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -920,6 +1004,16 @@ function showGuideStep() {
   if (s.onEnter === 'unlockPositions') {
     const seal = document.getElementById('positionsSeal');
     if (seal) seal.classList.add('unlocked');
+  }
+  if (s.onEnter === 'srDemo') {
+    document.getElementById('tpslToggle').checked = true;
+    document.getElementById('tpslInputs').style.display = 'block';
+    const levels = drawSupportResistance();
+    if (levels) {
+      document.getElementById('tpPrice').value = levels.resistance.toFixed(1);
+      document.getElementById('slPrice').value = (levels.support * 0.998).toFixed(1);
+    }
+    updateTpslPct();
   }
   if (s.onEnter === 'tpslDemo') {
     document.getElementById('tpslToggle').checked = true;
