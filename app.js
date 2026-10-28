@@ -270,25 +270,26 @@ function showTpslArrows() {
   }
 }
 function updateLimitHint() {
-  const px = parseFloat(document.getElementById('limitPrice').value);
+  const pct = parseFloat(document.getElementById('limitPct').value);
   const hint = document.getElementById('limitHint');
-  if (!px || px <= 0) { hint.textContent = '—'; return; }
-  const dist = ((px - state.price) / state.price) * 100;
-  const ok = (state.side === 'long' && px < state.price) || (state.side === 'short' && px > state.price);
-  hint.textContent = dist.toFixed(2) + '%';
+  const mkt = document.getElementById('limitMkt');
+  mkt.textContent = 'Mkt ' + state.price.toFixed(markets[currentMarket]?.precision || 1);
+  if (isNaN(pct) || pct === 0) { hint.textContent = '—'; return; }
+  const px = state.price * (1 + pct / 100);
+  const ok = (state.side === 'long' && pct < 0) || (state.side === 'short' && pct > 0);
+  hint.textContent = '@ ' + px.toFixed(markets[currentMarket]?.precision || 1);
   hint.style.color = ok ? '#00c853' : '#ff5252';
 }
 function placeLimitOrder() {
-  const px = parseFloat(document.getElementById('limitPrice').value);
-  if (!px || px <= 0) return alert('Enter a limit price');
-  const away = Math.abs(px - state.price) / state.price;
-  if (away < 0.001) return alert('Limit must be away from the market (not at the current price).');
+  const pct = parseFloat(document.getElementById('limitPct').value);
+  if (isNaN(pct) || pct === 0) return alert('Enter a % away from market (e.g. -2 for a long limit below).');
+  const px = state.price * (1 + pct / 100);
   const size = parseFloat(document.getElementById('sizeInput').value) || 0.01;
   const id = 'lim-' + Date.now();
   limitOrders.push({ id, market: currentMarket, side: state.side, price: px, size });
   drawLimitLine(px, state.side);
-  showToast(`Limit ${state.side} @ ${px} on chart`);
-  hypurrSay(`Limit sits at ${px}. It only fills if price reaches it.`, 3000);
+  showToast(`Limit ${state.side} @ ${px.toFixed(1)} (${pct}%)`);
+  hypurrSay(`Limit at ${px.toFixed(1)} (${pct}% from market). It fills only if price reaches it.`, 3000);
   window.limitPlaced = true;
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
@@ -646,29 +647,28 @@ function bindEvents() {
     }
     showGuideStep();
   };
-  document.getElementById('marketDropdown').onchange = (e) => {
-    currentMarket = e.target.value;
-    const m = markets[currentMarket];
-    if (m) {
-      state.price = m.price;
-      const candles = generateCandles(state.price, 120);
-      state.candleSeries.setData(candles);
-      updateUI();
-      updateBook();
-    }
-  };
   document.querySelectorAll('.tf-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       candleInterval = +btn.dataset.tf * 60;
-      const candles = generateCandles(state.price, 120);
-      state.candleSeries.setData(candles);
+      loadCandles(+btn.dataset.tf);
     };
   });
+  // Load real candles on start
+  loadCandles(60);
+  document.getElementById('marketDropdown').onchange = (e) => {
+    currentMarket = e.target.value;
+    const m = markets[currentMarket];
+    if (m) {
+      state.price = m.price;
+      loadCandles(+document.querySelector('.tf-btn.active')?.dataset.tf || 60);
+      updateUI();
+      updateBook();
+    }
+  };
   document.getElementById('orderTypeMarket').onclick = () => {
     orderType = 'market';
-    document.getElementById('orderTypeMarket').classList.add('btn');
     document.getElementById('orderTypeMarket').classList.remove('secondary');
     document.getElementById('orderTypeLimit').classList.add('secondary');
     document.getElementById('limitRow').style.display = 'none';
@@ -680,10 +680,9 @@ function bindEvents() {
     document.getElementById('limitRow').style.display = 'flex';
     updateLimitHint();
   };
-  document.getElementById('limitPrice').oninput = updateLimitHint;
-  document.getElementById('placeLimit') && (document.getElementById('placeLimit').onclick = placeLimitOrder);
+  document.getElementById('limitPct').oninput = updateLimitHint;
 
-  // Make Hypurr draggable (prevent image ghost-drag)
+  // Make Hypurr draggable
   const hypurrEl = document.getElementById('hypurr');
   const hypurrImg = document.getElementById('hypurrCat');
   hypurrImg.addEventListener('dragstart', (e) => e.preventDefault());
@@ -706,6 +705,29 @@ function bindEvents() {
     hypurrEl.style.bottom = 'auto';
   });
   document.addEventListener('mouseup', () => { dragging = false; hypurrEl.style.cursor = ''; });
+}
+
+async function loadCandles(interval) {
+  const m = markets[currentMarket];
+  const symbol = m?.binance || 'BTCUSDT';
+  const map = { 15: '15m', 60: '1h', 240: '4h' };
+  const tf = map[interval] || '1h';
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=120`);
+    if (!res.ok) throw new Error('klines');
+    const raw = await res.json();
+    const candles = raw.map(k => ({
+      time: Math.floor(k[0] / 1000),
+      open: +k[1], high: +k[2], low: +k[3], close: +k[4]
+    }));
+    state.candleSeries.setData(candles);
+    if (candles.length) state.price = candles[candles.length - 1].close;
+    updateUI();
+  } catch (err) {
+    console.warn('klines failed', err);
+    const candles = generateCandles(state.price, 120);
+    state.candleSeries.setData(candles);
+  }
 }
 
 function openDeposit() {
@@ -872,11 +894,11 @@ const guideSteps = [
   },
   {
     title: 'Place the Limit',
-    text: 'Enter a limit price away from the market and click Place Order (or the Limit flow). The limit appears as a dotted line on the chart. It sits there until price reaches it. Debrief: limits let you buy dips or sell strength without chasing.',
-    target: '#limitPrice',
-    preview: 'Limit price',
+    text: 'Current market price is shown beside the field. Enter a % away from market (negative for a long limit below, positive for a short limit above) and click Place Order. The limit appears as a dotted line on the chart. It only fills if price reaches it.',
+    target: '#limitPct',
+    preview: '% away',
     require: 'limitPlaced',
-    cat: 'Set a limit away from market. Watch it appear on the chart.'
+    cat: 'Enter % away from market, then Place Order. Watch the line.'
   },
   {
     title: 'Done',
