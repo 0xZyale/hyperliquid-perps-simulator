@@ -220,7 +220,6 @@ function updateTpslPct() {
   if (tp > 0 && entry > 0) {
     const pct = ((tp - entry) / entry) * 100;
     const marginPct = pct * state.leverage;
-    document.getElementById('tpPct').textContent = pct.toFixed(2) + '% price / ' + marginPct.toFixed(1) + '% margin';
     if (document.activeElement.id !== 'tpPctInput') {
       document.getElementById('tpPctInput').value = marginPct.toFixed(1);
     }
@@ -228,7 +227,6 @@ function updateTpslPct() {
   if (sl > 0 && entry > 0) {
     const pct = ((sl - entry) / entry) * 100;
     const marginPct = pct * state.leverage;
-    document.getElementById('slPct').textContent = pct.toFixed(2) + '% price / ' + marginPct.toFixed(1) + '% margin';
     if (document.activeElement.id !== 'slPctInput') {
       document.getElementById('slPctInput').value = marginPct.toFixed(1);
     }
@@ -949,27 +947,36 @@ const PYTH_BTC = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a41
 let pythTimer = null;
 
 async function fetchPythPrice() {
+  // Try Pyth Hermes first; it requires an API key since Aug 2026, so fall back to Binance public ticker
   try {
     const url = `https://hermes.pyth.network/v2/updates/price/latest?ids[]=${PYTH_BTC}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Pyth ' + res.status);
-    const data = await res.json();
-    const parsed = data.parsed && data.parsed[0];
-    if (!parsed || !parsed.price) throw new Error('no price');
-    const raw = Number(parsed.price.price);
-    const expo = parsed.price.expo;
-    const price = raw * Math.pow(10, expo);
-    if (price > 0) {
-      state.price = price;
-      updateChart(state.price);
-      updateUI();
+    if (res.ok) {
+      const data = await res.json();
+      const parsed = data.parsed && data.parsed[0];
+      if (parsed && parsed.price) {
+        const price = Number(parsed.price.price) * Math.pow(10, parsed.price.expo);
+        if (price > 0) { applyLivePrice(price); return; }
+      }
     }
+  } catch (err) { /* fall through */ }
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    if (!res.ok) throw new Error('binance');
+    const data = await res.json();
+    const price = Number(data.price);
+    if (price > 0) { applyLivePrice(price); return; }
   } catch (err) {
-    console.warn('Pyth fetch failed', err);
-    showToast('Pyth unavailable — using simulated prices');
+    console.warn('Live price failed', err);
+    showToast('Live price unavailable — using simulated');
     document.getElementById('pythMode').checked = false;
     stopPyth();
   }
+}
+function applyLivePrice(price) {
+  state.price = price;
+  updateChart(state.price);
+  updateUI();
 }
 function startPyth() {
   stopPyth();
@@ -1001,6 +1008,7 @@ function init() {
   updateUI();
   updateBook();
   setInterval(tick, 1000);
+  if (document.getElementById('pythMode') && document.getElementById('pythMode').checked) startPyth();
   // Auto-start guide after a short delay
   setTimeout(startGuide, 800);
 }

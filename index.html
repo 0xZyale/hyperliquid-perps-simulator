@@ -32,8 +32,8 @@
       <a href="#">Leaderboard</a>
     </nav>
     <div class="header-right">
-      <label class="tooltip-toggle" title="Use live Pyth Network prices instead of simulated">
-        <input type="checkbox" id="pythMode"> Pyth prices
+      <label class="tooltip-toggle" title="Use live BTC price (tries Pyth, falls back to Binance)">
+        <input type="checkbox" id="pythMode" checked> Live price
       </label>
       <button class="btn secondary" id="guideBtn">Start Guide</button>
       <button class="btn" id="depositHeaderBtn" data-tooltip="Bridge USDC onto Hyperliquid (simulated). Funds become available margin after confirmation.">Deposit</button>
@@ -109,17 +109,15 @@
       <div class="tpsl-box" id="tpslBox">
         <label><input type="checkbox" id="tpslToggle"> Take Profit / Stop Loss</label>
         <div class="tpsl-inputs" id="tpslInputs" style="display:none;">
-          <div class="row">
-            <label data-tooltip="Price where the position auto-closes for a gain.">TP</label>
-            <input type="number" id="tpPrice" placeholder="TP price" step="0.1">
-            <input type="number" id="tpPctInput" class="tpsl-pct-input" placeholder="%" step="0.1" title="Gain % (of margin)">
-            <span id="tpPct" class="tpsl-pct">—</span>
+          <div class="tpsl-row">
+            <label>TP</label>
+            <input type="number" id="tpPrice" placeholder="Price" step="0.1">
+            <input type="number" id="tpPctInput" class="tpsl-pct-input" placeholder="%" step="0.1">
           </div>
-          <div class="row">
-            <label data-tooltip="Price where the position auto-closes to limit loss. Keep this tight.">SL</label>
-            <input type="number" id="slPrice" placeholder="SL price" step="0.1">
-            <input type="number" id="slPctInput" class="tpsl-pct-input" placeholder="%" step="0.1" title="Loss % (of margin)">
-            <span id="slPct" class="tpsl-pct">—</span>
+          <div class="tpsl-row">
+            <label>SL</label>
+            <input type="number" id="slPrice" placeholder="Price" step="0.1">
+            <input type="number" id="slPctInput" class="tpsl-pct-input" placeholder="%" step="0.1">
           </div>
         </div>
       </div>
