@@ -175,7 +175,7 @@ function updateUI() {
 function renderPositions() {
   const body = document.getElementById('positionsBody');
   if (state.positions.length === 0) {
-    body.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted);">No open positions yet</td></tr>';
+    body.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--muted);">No open positions yet</td></tr>';
     return;
   }
   body.innerHTML = state.positions.map(p => {
@@ -192,7 +192,16 @@ function renderPositions() {
       <td>${p.liq.toFixed(1)}</td>
       <td>${p.margin.toFixed(2)}</td>
       <td>
-        <button class="btn danger small" onclick="openCloseModal('${p.id}')" data-tooltip="Open Market Close popup to close part or all of this position.">Close</button>
+        <span class="close-types">
+          <button class="close-link" onclick="openCloseModal('${p.id}','limit')">Limit</button>
+          <button class="close-link" onclick="openCloseModal('${p.id}','market')">Market</button>
+          <button class="close-link" onclick="openCloseModal('${p.id}','trailing')">Trailing</button>
+          <button class="close-link" onclick="openCloseModal('${p.id}','reverse')">Reverse</button>
+        </span>
+      </td>
+      <td>
+        <button class="tpsl-edit" onclick="editPositionTpsl('${p.id}')" title="Edit TP/SL">✎</button>
+        <span class="tpsl-mini">${p.tp ? p.tp.toFixed(0) : '—'} / ${p.sl ? p.sl.toFixed(0) : '—'}</span>
       </td>
     </tr>`;
   }).join('');
@@ -368,7 +377,7 @@ function placeOrder() {
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
 
-function openCloseModal(id) {
+function openCloseModal(id, type = 'market') {
   closingPositionId = id;
   const p = state.positions.find(x => x.id === id);
   if (!p) return;
@@ -376,7 +385,20 @@ function openCloseModal(id) {
   document.getElementById('closePctSlider').value = 100;
   document.getElementById('closePctVal').textContent = '100%';
   document.getElementById('closeModal').style.display = 'flex';
+  document.querySelector('#closeModal h3').textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' Close';
+  window.closeType = type;
 }
+function editPositionTpsl(id) {
+  const p = state.positions.find(x => x.id === id);
+  if (!p) return;
+  const tp = prompt('Take Profit price (blank to clear):', p.tp || '');
+  const sl = prompt('Stop Loss price (blank to clear):', p.sl || '');
+  if (tp !== null) p.tp = tp ? parseFloat(tp) : null;
+  if (sl !== null) p.sl = sl ? parseFloat(sl) : null;
+  updateUI();
+  hypurrSay('TP/SL updated on the position.', 2000);
+}
+window.editPositionTpsl = editPositionTpsl;
 function confirmMarketClose() {
   if (!closingPositionId) return;
   const pct = +document.getElementById('closePctSlider').value / 100;
@@ -856,11 +878,11 @@ const guideSteps = [
   },
   {
     title: 'Sprint 3: Partial Close',
-    text: 'In the Positions table (bottom), click “Close”. A Market Close popup appears. Drag the size slider to a partial amount and hit Market Close. Next unlocks after you confirm.',
+    text: 'In the Positions table, use the close links: Limit, Market, Trailing, or Reverse (same as Hyperliquid). Click Market for a market close popup. Drag the size slider and confirm. Next unlocks after you close.',
     target: '.bottom',
-    preview: 'Close',
+    preview: 'Market',
     require: 'partial',
-    cat: 'Open Market Close and close part of it.',
+    cat: 'Use Limit / Market / Trailing / Reverse to close.',
     onEnter: 'unlockPositions'
   },
   {

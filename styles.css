@@ -166,6 +166,25 @@ th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--bor
 th:first-child, td:first-child { text-align: left; }
 .pos { color: var(--green); }
 .neg { color: var(--red); }
+.close-types { display: flex; gap: 6px; }
+.close-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.close-link:hover { text-decoration: underline; }
+.tpsl-edit {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 4px;
+}
+.tpsl-mini { font-size: 11px; color: var(--muted); }
 
 .order-panel h3 { margin-bottom: 8px; font-size: 14px; }
 .row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
