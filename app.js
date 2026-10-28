@@ -815,19 +815,21 @@ const guideSteps = [
   },
   {
     title: 'Sprint 2: Order Form — Leverage',
-    text: 'Funds are in. Click the Leverage box. Different perps have different max leverage (BTC up to 50x, most alts lower). Move the slider — Next unlocks after you change it.',
+    text: 'Funds are in. Click the Leverage box. Different perps have different max leverage (BTC up to 50x, most alts lower). Move the slider — Next unlocks after you change it. Stay on Market for now.',
     target: '#leverageBox',
     preview: 'Leverage',
     require: 'leverage',
-    cat: 'Set leverage. Higher = less margin, closer liq.'
+    cat: 'Set leverage. Stay on Market.',
+    onEnter: 'forceMarket'
   },
   {
     title: 'Sprint 2: Commit Margin',
-    text: 'Drag the % Margin slider. The Margin Required number glows so you see what you’re committing. Next unlocks once you’ve set a size.',
+    text: 'Drag the % Margin slider. The Margin Required number glows so you see what you’re committing. Next unlocks once you’ve set a size. Stay on Market.',
     target: '#pctSlider',
     preview: '% Margin',
     require: 'margin',
-    cat: 'Commit some margin. Watch the glowing number.'
+    cat: 'Commit some margin. Watch the glowing number.',
+    onEnter: 'forceMarket'
   },
   {
     title: 'Sprint 2: Cross vs Isolated',
@@ -1022,7 +1024,12 @@ function showGuideStep() {
   const hypurr = document.getElementById('hypurr');
   if (mr) mr.classList.remove('glow');
 
-  if (s.onEnter === 'seed') seedDemoPosition();
+  if (s.onEnter === 'forceMarket') {
+    orderType = 'market';
+    document.getElementById('orderTypeMarket')?.classList.remove('secondary');
+    document.getElementById('orderTypeLimit')?.classList.add('secondary');
+    document.getElementById('limitRow').style.display = 'none';
+  }
   if (s.onEnter === 'unlockPositions') {
     const seal = document.getElementById('positionsSeal');
     if (seal) seal.classList.add('unlocked');
