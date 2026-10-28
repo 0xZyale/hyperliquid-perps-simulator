@@ -11,16 +11,8 @@
 
   <!-- Hypurr Mascot -->
   <div class="hypurr" id="hypurr">
-    <div class="hypurr-bubble" id="hypurrBubble">Hey, I’m Hypurr 🐱 — click me anytime for tips, or hit Start Guide and I’ll walk you through everything.</div>
-    <svg class="hypurr-cat" id="hypurrCat" viewBox="0 0 64 64" title="Hypurr — Hyperliquid mascot">
-      <ellipse cx="32" cy="40" rx="18" ry="16" fill="#00d4b1"/>
-      <polygon points="14,28 22,12 26,28" fill="#00d4b1"/>
-      <polygon points="50,28 42,12 38,28" fill="#00d4b1"/>
-      <ellipse cx="26" cy="38" rx="3" ry="3.5" fill="#0b0e11"/>
-      <ellipse cx="38" cy="38" rx="3" ry="3.5" fill="#0b0e11"/>
-      <ellipse cx="32" cy="46" rx="2" ry="1.5" fill="#0b0e11"/>
-      <path d="M29 46 Q32 49 35 46" stroke="#0b0e11" stroke-width="1.2" fill="none"/>
-    </svg>
+    <div class="hypurr-bubble" id="hypurrBubble">Hey, I’m Hypurr — click me anytime for tips, or hit Start Guide and I’ll walk you through everything.</div>
+    <img class="hypurr-cat" id="hypurrCat" src="hypurr.png" alt="Hypurr — Hyperliquid mascot" title="Hypurr">
   </div>
   <header>
     <div class="logo">
@@ -69,12 +61,18 @@
     </div>
 
     <div class="order-panel">
-      <div style="display:flex; gap:8px; margin-bottom:12px;" id="modeToggle" data-tooltip="Cross shares all margin across positions. Isolated only risks the margin on this trade.">
+      <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;" id="modeToggle" data-tooltip="Cross shares all margin across positions. Isolated only risks the margin on this trade.">
         <button class="btn secondary small" id="crossBtn" data-tooltip="Cross margin: your whole balance backs this trade. Higher liquidation risk if other positions lose.">Cross</button>
         <button class="btn small" id="isolatedBtn" data-tooltip="Isolated margin: only the margin you commit to this position can be liquidated.">Isolated</button>
-        <span style="margin-left:auto; color:var(--muted);" data-tooltip="Multiplier applied to your margin. Notional = margin × leverage.">Leverage</span>
-        <input type="range" class="leverage-slider" id="leverageSlider" min="1" max="50" value="10" data-tooltip="Slide to change leverage. Higher = less margin for same size, closer liquidation.">
-        <span id="leverageVal">10x</span>
+        <div class="leverage-box" id="leverageBox" data-tooltip="Click to set leverage. Different perps have different max leverage (BTC up to 50x, most alts lower). Higher = less margin, closer liquidation.">
+          <span>Leverage</span>
+          <button class="leverage-btn" id="leverageBtn" type="button">10x</button>
+          <div class="leverage-popover" id="leveragePopover" style="display:none;">
+            <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Max leverage varies by market<br>(BTC up to 50x, others often lower)</div>
+            <input type="range" id="leverageSlider" min="1" max="50" value="10">
+            <div style="text-align:center; font-weight:600; margin-top:4px;" id="leverageVal">10x</div>
+          </div>
+        </div>
       </div>
 
       <div class="side-btns">

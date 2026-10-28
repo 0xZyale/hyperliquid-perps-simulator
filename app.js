@@ -347,8 +347,13 @@ function showToast(msg) {
 
 // ---------- Events ----------
 function bindEvents() {
+  document.getElementById('leverageBtn').onclick = () => {
+    const pop = document.getElementById('leveragePopover');
+    pop.style.display = pop.style.display === 'none' ? 'block' : 'none';
+  };
   document.getElementById('leverageSlider').oninput = (e) => {
     state.leverage = +e.target.value;
+    document.getElementById('leverageBtn').textContent = state.leverage + 'x';
     updateUI();
     if (typeof checkStepProgress === 'function') checkStepProgress();
     if (document.getElementById('guideOverlay').classList.contains('active') && guideSteps[state.guideStep]?.require === 'leverage') {
@@ -503,11 +508,11 @@ const guideSteps = [
   },
   {
     title: '2. Set Leverage',
-    text: 'Slide the leverage bar. Notional = margin × leverage (e.g. $100 margin at 10x = $1,000 position). Higher leverage = less margin needed but closer liquidation. Move the slider — Next unlocks only after you change it.',
-    target: '#leverageSlider',
+    text: 'Click the leverage box (Hyperliquid-style). Different perps have different max leverage — BTC can go up to 50x, most alts are lower. Notional = margin × leverage. Change it — Next unlocks only after you move the slider.',
+    target: '#leverageBox',
     preview: 'Leverage',
     require: 'leverage',
-    cat: 'Higher leverage = less margin, closer liq. Slide it to see the difference.'
+    cat: 'Higher leverage = less margin, closer liq. Different markets have different maxes.'
   },
   {
     title: '3. Commit Margin',
@@ -586,6 +591,12 @@ function closeGuide() {
   document.getElementById('guideArrow').style.display = 'none';
   const mr = document.getElementById('marginReq');
   if (mr) mr.classList.remove('glow');
+  const hypurr = document.getElementById('hypurr');
+  hypurr.classList.remove('with-guide');
+  hypurr.style.left = '';
+  hypurr.style.top = '';
+  hypurr.style.right = '20px';
+  hypurr.style.bottom = '20px';
 }
 function nextGuide() {
   if (state.guideStep >= guideSteps.length - 1) {
@@ -650,6 +661,8 @@ function showGuideStep() {
   const spot = document.getElementById('spotlight');
   const arrow = document.getElementById('guideArrow');
   const mr = document.getElementById('marginReq');
+  const guideBox = document.querySelector('.guide-box');
+  const hypurr = document.getElementById('hypurr');
   if (mr) mr.classList.remove('glow');
 
   if (s.onEnter === 'seed') seedDemoPosition();
@@ -662,6 +675,24 @@ function showGuideStep() {
     }
     updateTpslPct();
   }
+
+  // Position guide box near the order panel (right side) and put Hypurr beside it
+  const orderPanel = document.querySelector('.order-panel');
+  const opRect = orderPanel ? orderPanel.getBoundingClientRect() : { left: window.innerWidth - 340, top: 60 };
+  const boxWidth = 360;
+  const leftPos = Math.max(20, opRect.left - boxWidth - 16);
+  const topPos = Math.max(70, Math.min(opRect.top + 20, window.innerHeight - 280));
+  guideBox.style.left = leftPos + 'px';
+  guideBox.style.top = topPos + 'px';
+  guideBox.style.right = 'auto';
+  guideBox.style.bottom = 'auto';
+
+  // Place Hypurr immediately to the left of the guide box
+  hypurr.classList.add('with-guide');
+  hypurr.style.left = (leftPos - 72) + 'px';
+  hypurr.style.top = (topPos + 8) + 'px';
+  hypurr.style.right = 'auto';
+  hypurr.style.bottom = 'auto';
 
   if (s.target) {
     const el = document.querySelector(s.target);
