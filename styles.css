@@ -103,7 +103,27 @@ main {
   gap: 16px;
   background: var(--panel-2);
 }
-.market-select { font-size: 18px; font-weight: 600; cursor: pointer; }
+.market-select { font-size: 18px; font-weight: 600; }
+.market-select select {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.timeframes { display: flex; gap: 4px; margin-left: 12px; }
+.tf-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tf-btn.active { color: #000; background: var(--accent); border-color: var(--accent); }
 .price { font-size: 20px; font-weight: 700; }
 .change.pos { color: var(--green); }
 .change.neg { color: var(--red); }

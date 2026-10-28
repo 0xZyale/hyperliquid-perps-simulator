@@ -14,11 +14,15 @@ const state = {
 };
 
 const markets = {
-  'BTC-USDC': { price: 67500, precision: 1 },
-  'ETH-USDC': { price: 3450, precision: 2 },
-  'HYPE-USDC': { price: 28.5, precision: 3 }
+  'BTC-USDC': { price: 80800, precision: 1, binance: 'BTCUSDT' },
+  'ETH-USDC': { price: 3200, precision: 2, binance: 'ETHUSDT' },
+  'XRP-USDC': { price: 2.45, precision: 4, binance: 'XRPUSDT' },
+  'HYPE-USDC': { price: 28.5, precision: 3, binance: null },
+  'ZEC-USDC': { price: 48, precision: 2, binance: 'ZECUSDT' },
+  'SOL-USDC': { price: 185, precision: 2, binance: 'SOLUSDT' }
 };
 let currentMarket = 'BTC-USDC';
+let candleInterval = 60; // seconds per candle (15m=900, 1h=3600, 4h=14400 for display spacing)
 
 // ---------- Chart ----------
 function initChart() {
@@ -52,11 +56,12 @@ function generateCandles(startPrice, count) {
   const data = [];
   let price = startPrice * 0.97;
   const now = Math.floor(Date.now() / 1000);
+  const step = candleInterval;
   for (let i = count; i > 0; i--) {
-    const time = now - i * 60;
+    const time = now - i * step;
     const open = price;
     const change = (Math.random() - 0.5) * startPrice * 0.004;
-    price = Math.max(100, price + change);
+    price = Math.max(startPrice * 0.1, price + change);
     const high = Math.max(open, price) + Math.random() * startPrice * 0.001;
     const low = Math.min(open, price) - Math.random() * startPrice * 0.001;
     data.push({ time, open, high, low, close: price });
@@ -574,7 +579,37 @@ function bindEvents() {
     if (v === '') return;
     state.guideStep = +v;
     e.target.value = '';
+    // Kick-start the guide if it isn't open
+    if (!document.getElementById('guideOverlay').classList.contains('active')) {
+      document.getElementById('guideOverlay').classList.add('active');
+    }
     showGuideStep();
+  };
+  document.getElementById('marketDropdown').onchange = (e) => {
+    currentMarket = e.target.value;
+    const m = markets[currentMarket];
+    if (m) {
+      state.price = m.price;
+      const candles = generateCandles(state.price, 120);
+      state.candleSeries.setData(candles);
+      updateUI();
+      updateBook();
+    }
+  };
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      candleInterval = +btn.dataset.tf * 60;
+      const candles = generateCandles(state.price, 120);
+      state.candleSeries.setData(candles);
+    };
+  });
+  document.getElementById('placeLimit').onclick = () => {
+    const px = parseFloat(document.getElementById('limitPrice').value);
+    if (!px || px <= 0) return alert('Enter a limit price');
+    showToast(`Limit ${state.side} placed @ ${px} (simulated)`);
+    hypurrSay(`Limit order set at ${px}. It fills when price reaches it.`, 3000);
   };
 
   // Make Hypurr draggable (prevent image ghost-drag)
@@ -741,13 +776,27 @@ const guideSteps = [
     cat: 'Click the ✕ on the position line to open Market Close.'
   },
   {
-    title: 'Sprint 3: TP / SL',
-    text: 'Check “Take Profit / Stop Loss”. Set a TP above entry and a tight SL below (price or % fields both work). Higher leverage multiplies the price % into a larger % of margin. Trading is about minimizing losses while letting winners run.',
+    title: 'Sprint 3: TP / SL + Risk/Reward',
+    text: 'Set TP above entry and a tight SL below. Example: SL at −5% and TP at +15% is a 1:3 risk/reward — you risk 1 to earn 3. Higher leverage multiplies the price % into a larger % of margin. Good trades define the loss first and let the winner pay for several losers.',
     target: '#tpslBox',
     preview: 'TP / SL',
     require: 'tpsl',
-    cat: 'Tight SL protects you. Leverage multiplies the pain.',
+    cat: '1:3 RR — risk 1 to earn 3. Tight SL, wider TP.',
     onEnter: 'tpslDemo'
+  },
+  {
+    title: 'Select an Asset',
+    text: 'Use the market dropdown (top-left) to switch perps: BTC, ETH, XRP, HYPE, ZEC, SOL. Each has its own price, leverage limit, and volatility. Pick the one you want to trade.',
+    target: '#marketDropdown',
+    preview: 'Market',
+    cat: 'Switch markets. Alts move more than BTC.'
+  },
+  {
+    title: 'Limit Orders on Alts',
+    text: 'On alts, limit orders let you set the exact price. Enter a limit price and click Limit. The order sits until price reaches it (simulated). Useful for buying dips or selling into strength without chasing.',
+    target: '#placeLimit',
+    preview: 'Limit',
+    cat: 'Limit orders fill at your price, not the current one.'
   },
   {
     title: 'Done',

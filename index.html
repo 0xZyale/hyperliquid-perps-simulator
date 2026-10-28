@@ -42,6 +42,8 @@
         <option value="1">Sprint 1: Bridge</option>
         <option value="3">Sprint 2: Order Form</option>
         <option value="8">Sprint 3: Positions</option>
+        <option value="11">Select Asset</option>
+        <option value="12">Limit Orders</option>
       </select>
       <button class="btn" id="depositHeaderBtn" data-tooltip="Bridge USDC onto Hyperliquid (simulated). Funds become available margin after confirmation.">Deposit</button>
       <button class="btn" id="connectBtn" data-tooltip="Connect an EVM wallet (Rabby or MetaMask). Simulated.">Connect</button>
@@ -51,7 +53,21 @@
   <main>
     <div class="chart-wrap">
       <div class="market-header">
-        <div class="market-select" id="marketSelect">BTC-USDC ▾</div>
+        <div class="market-select" id="marketSelect">
+          <select id="marketDropdown">
+            <option value="BTC-USDC">BTC-USDC</option>
+            <option value="ETH-USDC">ETH-USDC</option>
+            <option value="XRP-USDC">XRP-USDC</option>
+            <option value="HYPE-USDC">HYPE-USDC</option>
+            <option value="ZEC-USDC">ZEC-USDC</option>
+            <option value="SOL-USDC">SOL-USDC</option>
+          </select>
+        </div>
+        <div class="timeframes" id="timeframes">
+          <button class="tf-btn" data-tf="15">15m</button>
+          <button class="tf-btn active" data-tf="60">1h</button>
+          <button class="tf-btn" data-tf="240">4h</button>
+        </div>
         <div class="price" id="markPrice">—</div>
         <div class="change" id="change24h">—</div>
         <div class="stats">
@@ -101,7 +117,10 @@
         <select id="sizeUnit"><option>BTC</option><option>USDC</option></select>
       </div>
       <div class="row">
-        <label>% Margin</label>
+        <label>Limit</label>
+        <input type="number" id="limitPrice" placeholder="Limit price" step="0.1">
+        <button class="btn secondary small" id="placeLimit" data-tooltip="Place a limit order at the price shown. Fills when market reaches it.">Limit</button>
+      </div>
         <input type="range" id="pctSlider" min="0" max="100" value="0" style="flex:1;" data-tooltip="Percentage of available margin to use for this trade.">
         <span id="pctVal">0%</span>
       </div>
