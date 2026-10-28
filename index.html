@@ -109,11 +109,13 @@
           <div class="row">
             <label data-tooltip="Price where the position auto-closes for a gain.">TP</label>
             <input type="number" id="tpPrice" placeholder="TP price" step="0.1">
+            <input type="number" id="tpPctInput" class="tpsl-pct-input" placeholder="%" step="0.1" title="Gain % (of margin)">
             <span id="tpPct" class="tpsl-pct">—</span>
           </div>
           <div class="row">
             <label data-tooltip="Price where the position auto-closes to limit loss. Keep this tight.">SL</label>
             <input type="number" id="slPrice" placeholder="SL price" step="0.1">
+            <input type="number" id="slPctInput" class="tpsl-pct-input" placeholder="%" step="0.1" title="Loss % (of margin)">
             <span id="slPct" class="tpsl-pct">—</span>
           </div>
         </div>
@@ -160,6 +162,27 @@
       </div>
       <button class="btn" id="closeDeposit">Close</button>
       <div class="sim-note">In production: connect wallet → Deposit → choose chain/asset → confirm bridge. Funds appear as available margin after confirmation.</div>
+    </div>
+  </div>
+
+  <!-- Market Close Modal -->
+  <div class="modal" id="closeModal">
+    <div class="modal-content" style="min-width:340px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0;">Market Close</h3>
+        <button class="btn secondary small" id="closeModalX">✕</button>
+      </div>
+      <p style="color:var(--muted); font-size:12px; margin-bottom:12px;">This will attempt to immediately close the position.</p>
+      <div class="info-box">
+        <div><span>Size</span><span id="closeSizeLabel">—</span></div>
+        <div><span>Price</span><span>Market</span></div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <label style="width:auto;">Size</label>
+        <input type="range" id="closePctSlider" min="1" max="100" value="100" style="flex:1;">
+        <span id="closePctVal" style="min-width:48px; text-align:right;">100%</span>
+      </div>
+      <button class="btn" id="confirmClose" style="width:100%; margin-top:12px;">Market Close</button>
     </div>
   </div>
 

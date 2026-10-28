@@ -170,8 +170,7 @@ function renderPositions() {
       <td>${p.liq.toFixed(1)}</td>
       <td>${p.margin.toFixed(2)}</td>
       <td>
-        <button class="btn danger small" onclick="closePartial('${p.id}', 0.5)" data-tooltip="Close half of this position. Returns half the margin + any PnL.">Close 50%</button>
-        <button class="btn danger small" onclick="closePosition('${p.id}')" data-tooltip="Close the entire position.">Close All</button>
+        <button class="btn danger small" onclick="openCloseModal('${p.id}')" data-tooltip="Open Market Close popup to close part or all of this position.">Close</button>
       </td>
     </tr>`;
   }).join('');
@@ -203,15 +202,21 @@ function updateTpslPct() {
   const tp = parseFloat(document.getElementById('tpPrice').value);
   const sl = parseFloat(document.getElementById('slPrice').value);
   const entry = state.price;
-  if (tp > 0) {
+  if (tp > 0 && entry > 0) {
     const pct = ((tp - entry) / entry) * 100;
     const marginPct = pct * state.leverage;
     document.getElementById('tpPct').textContent = pct.toFixed(2) + '% price / ' + marginPct.toFixed(1) + '% margin';
+    if (document.activeElement.id !== 'tpPctInput') {
+      document.getElementById('tpPctInput').value = marginPct.toFixed(1);
+    }
   }
-  if (sl > 0) {
+  if (sl > 0 && entry > 0) {
     const pct = ((sl - entry) / entry) * 100;
     const marginPct = pct * state.leverage;
     document.getElementById('slPct').textContent = pct.toFixed(2) + '% price / ' + marginPct.toFixed(1) + '% margin';
+    if (document.activeElement.id !== 'slPctInput') {
+      document.getElementById('slPctInput').value = marginPct.toFixed(1);
+    }
   }
   showTpslArrows();
 }
@@ -278,6 +283,38 @@ function placeOrder() {
   document.getElementById('sizeInput').value = '';
   updateUI();
   showToast(`${state.side.toUpperCase()} ${size.toFixed(4)} BTC @ ${state.price.toFixed(1)}`);
+  orderPlaced = true;
+  if (typeof checkStepProgress === 'function') checkStepProgress();
+}
+
+function openCloseModal(id) {
+  closingPositionId = id;
+  const p = state.positions.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('closeSizeLabel').textContent = p.size.toFixed(4) + ' BTC';
+  document.getElementById('closePctSlider').value = 100;
+  document.getElementById('closePctVal').textContent = '100%';
+  document.getElementById('closeModal').style.display = 'flex';
+}
+function confirmMarketClose() {
+  if (!closingPositionId) return;
+  const pct = +document.getElementById('closePctSlider').value / 100;
+  const p = state.positions.find(x => x.id === closingPositionId);
+  if (!p) return;
+  if (pct >= 0.99) {
+    closePosition(closingPositionId);
+  } else {
+    closePartial(closingPositionId, pct);
+  }
+  document.getElementById('closeModal').style.display = 'none';
+  // Keep a notification visible for at least 5s
+  const center = document.getElementById('notifCenter');
+  const item = document.createElement('div');
+  item.className = 'notif-item';
+  item.innerHTML = `<div class="notif-circle"></div><div class="notif-text"><strong>Position closed</strong><br>${(pct*100).toFixed(0)}% closed at market. PnL realized.</div>`;
+  center.appendChild(item);
+  setTimeout(() => item.remove(), 5500);
+  hypurrSay(`Closed ${(pct*100).toFixed(0)}%. Notification stays up for a few seconds.`, 3000);
 }
 
 function closePartial(id, fraction) {
@@ -406,8 +443,33 @@ function bindEvents() {
   };
   document.getElementById('tpPrice').oninput = () => { updateTpslPct(); showTpslArrows(); };
   document.getElementById('slPrice').oninput = () => { updateTpslPct(); showTpslArrows(); };
+  document.getElementById('tpPctInput').oninput = () => {
+    const pct = parseFloat(document.getElementById('tpPctInput').value);
+    if (!isNaN(pct) && state.leverage > 0) {
+      const pricePct = pct / state.leverage;
+      document.getElementById('tpPrice').value = (state.price * (1 + pricePct / 100)).toFixed(1);
+      updateTpslPct();
+    }
+  };
+  document.getElementById('slPctInput').oninput = () => {
+    const pct = parseFloat(document.getElementById('slPctInput').value);
+    if (!isNaN(pct) && state.leverage > 0) {
+      const pricePct = pct / state.leverage;
+      document.getElementById('slPrice').value = (state.price * (1 + pricePct / 100)).toFixed(1);
+      updateTpslPct();
+    }
+  };
 
   document.getElementById('placeOrder').onclick = placeOrder;
+
+  // Close modal
+  document.getElementById('closePctSlider').oninput = (e) => {
+    document.getElementById('closePctVal').textContent = e.target.value + '%';
+  };
+  document.getElementById('confirmClose').onclick = confirmMarketClose;
+  document.getElementById('closeModalX').onclick = () => {
+    document.getElementById('closeModal').style.display = 'none';
+  };
 
   // Deposit buttons
   document.getElementById('depositHeaderBtn').onclick = openDeposit;
@@ -531,20 +593,20 @@ const guideSteps = [
     cat: 'Flip Cross ↔ Isolated. Feel the difference in risk.'
   },
   {
-    title: '5. Demo Position',
-    text: 'I’ve opened a fixed 0.05 BTC long for practice. You’ll close part of it from the Positions tab, then the rest from the chart.',
-    target: '.bottom',
-    preview: 'Positions',
-    onEnter: 'seed',
-    cat: 'Demo long is open. Let’s close it in two ways.'
+    title: '5. Place a Trade',
+    text: 'Enter a size (or use the % Margin slider) and click Place Order. This opens a real position you’ll use for the close practice next.',
+    target: '#placeOrder',
+    preview: 'Place Order',
+    require: 'order',
+    cat: 'Place an order first — then we’ll practice closing it.'
   },
   {
-    title: '6. Partial Close (Positions tab)',
-    text: 'In the Positions table, click “Close 50%” on the demo row. That reduces size and returns half the margin plus any PnL. Next unlocks after you do it.',
+    title: '6. Partial Close (Market Close modal)',
+    text: 'In the Positions table, click “Close” on your row. A Market Close popup appears (same idea as Hyperliquid). Drag the size slider to a partial amount and hit Market Close. Next unlocks after you confirm.',
     target: '.bottom',
-    preview: 'Close 50%',
+    preview: 'Close',
     require: 'partial',
-    cat: 'Close half from the table first. Easy partials.'
+    cat: 'Open the Market Close popup and close part of the position.'
   },
   {
     title: '7. Full Close (from Chart)',
@@ -575,6 +637,8 @@ let leverageStart = 10;
 let modeStart = true;
 let partialDone = false;
 let fullDone = false;
+let orderPlaced = false;
+let closingPositionId = null;
 
 function startGuide() {
   state.guideStep = 0;
@@ -582,6 +646,7 @@ function startGuide() {
   modeStart = state.isolated;
   partialDone = false;
   fullDone = false;
+  orderPlaced = state.positions.length > 0;
   document.getElementById('guideOverlay').classList.add('active');
   showGuideStep();
 }
@@ -627,8 +692,10 @@ function checkStepProgress() {
     ok = +document.getElementById('pctSlider').value > 0;
   } else if (s.require === 'mode') {
     ok = state.isolated !== modeStart;
+  } else if (s.require === 'order') {
+    ok = orderPlaced || state.positions.length > 0;
   } else if (s.require === 'partial') {
-    ok = partialDone || state.positions.every(p => p.size < 0.04);
+    ok = partialDone;
   } else if (s.require === 'full') {
     ok = fullDone || state.positions.length === 0;
   } else if (s.require === 'tpsl') {
@@ -687,10 +754,10 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Place Hypurr immediately to the left of the guide box
+  // Place Hypurr below the guide box so it never covers the text
   hypurr.classList.add('with-guide');
-  hypurr.style.left = (leftPos - 72) + 'px';
-  hypurr.style.top = (topPos + 8) + 'px';
+  hypurr.style.left = (leftPos + 8) + 'px';
+  hypurr.style.top = (topPos + 200) + 'px';
   hypurr.style.right = 'auto';
   hypurr.style.bottom = 'auto';
 
@@ -731,6 +798,7 @@ function tick() {
 // ---------- Init ----------
 window.closePosition = closePosition;
 window.closePartial = closePartial;
+window.openCloseModal = openCloseModal;
 
 function init() {
   initChart();
