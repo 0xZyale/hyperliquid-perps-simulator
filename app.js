@@ -107,7 +107,7 @@ function updatePositionLine() {
       axisLabelVisible: true,
       title: `${pos.side.toUpperCase()} @ ${pos.entry.toFixed(1)}`
     });
-    // Add an X button near the right edge of the chart that opens Market Close
+    // Add an X button on the entry line (right side) that opens Market Close
     const chartEl = document.getElementById('chart');
     const xBtn = document.createElement('div');
     xBtn.id = 'posLineX';
@@ -119,6 +119,13 @@ function updatePositionLine() {
       openCloseModal(pos.id);
     };
     chartEl.appendChild(xBtn);
+    // Align the X vertically with the entry price on the chart
+    const y = state.candleSeries.priceToCoordinate(pos.entry);
+    if (y !== null && y !== undefined) {
+      xBtn.style.top = y + 'px';
+    } else {
+      xBtn.style.top = '50%';
+    }
   }
 }
 
