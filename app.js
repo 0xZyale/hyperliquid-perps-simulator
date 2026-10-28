@@ -552,6 +552,24 @@ function bindEvents() {
       showGuideStep();
     }
   };
+  document.getElementById('guideSkip').onclick = () => {
+    // Skip jumps to the next sprint start
+    const jumps = [2, 2, 7, 7, 7, 7, 7, 10, 10, 10, 10];
+    const next = jumps[state.guideStep] ?? state.guideStep + 1;
+    if (next >= guideSteps.length) {
+      closeGuide();
+      return;
+    }
+    state.guideStep = next;
+    showGuideStep();
+  };
+  document.getElementById('guideJump').onchange = (e) => {
+    const v = e.target.value;
+    if (v === '') return;
+    state.guideStep = +v;
+    e.target.value = '';
+    showGuideStep();
+  };
 
   // Make Hypurr draggable (prevent image ghost-drag)
   const hypurrEl = document.getElementById('hypurr');
