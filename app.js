@@ -704,7 +704,10 @@ function bindEvents() {
     updateLimitHint();
     if (typeof checkStepProgress === 'function') checkStepProgress();
   };
-  document.getElementById('limitPct').oninput = updateLimitHint;
+  document.getElementById('limitPct').oninput = () => {
+    updateLimitHint();
+    if (typeof checkStepProgress === 'function') checkStepProgress();
+  };
 
   // Make Hypurr draggable
   const hypurrEl = document.getElementById('hypurr');
