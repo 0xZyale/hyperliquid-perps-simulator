@@ -1023,7 +1023,8 @@ function checkStepProgress() {
   } else if (s.require === 'limitType') {
     ok = orderType === 'limit';
   } else if (s.require === 'limitPlaced') {
-    ok = window.limitPlaced === true;
+    const pct = parseFloat(document.getElementById('limitPct')?.value);
+    ok = window.limitPlaced === true || (!isNaN(pct) && pct !== 0);
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -1113,8 +1114,8 @@ function showGuideStep() {
       const panel = document.querySelector('.order-panel');
       if (panel && el.closest('.order-panel')) {
         const pr = panel.getBoundingClientRect();
-        leftPos = Math.max(20, pr.left - boxW - 16);
-        topPos = Math.max(70, Math.min(r.top, window.innerHeight - boxH - 20));
+        leftPos = Math.max(20, pr.left - boxW - 40);
+        topPos = Math.max(70, Math.min(r.top - 40, window.innerHeight - boxH - 40));
       } else if (r.left > boxW + 40) {
         leftPos = r.left - boxW - 16;
         topPos = Math.max(70, Math.min(r.top, window.innerHeight - boxH - 20));
@@ -1282,8 +1283,7 @@ function init() {
   updateBook();
   setInterval(tick, 1000);
   if (document.getElementById('pythMode') && document.getElementById('pythMode').checked) startPyth();
-  // Auto-start guide after a short delay
-  setTimeout(startGuide, 800);
+  // Guide starts only when the user clicks Start Guide or Jump to…
 }
 
 if (document.readyState === 'loading') {
