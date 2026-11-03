@@ -1092,21 +1092,39 @@ const guideSteps = [
     cat: 'Click the ✕ on the limit line to cancel.'
   },
   {
-    title: 'Sprint 4a: ETH Short',
-    text: 'Subquest 1 of 2. Switch the market to ETH-USDC, choose Sell / Short, set a size, and Place Order. Next unlocks when the ETH short is open. Margin is topped up so you can trade.',
+    title: 'Sprint 4a: Find ETH',
+    text: 'Subquest 1. Open the market dropdown (top-left) and select ETH-USDC. There is no single ETH-short button — first find the market.',
     target: '#marketDropdown',
-    preview: 'ETH short',
-    require: 'ethShort',
-    cat: 'Open an ETH short.',
+    preview: 'ETH-USDC',
+    require: 'selectEth',
+    cat: 'Select ETH-USDC from the market dropdown.',
     noBlackout: true
   },
   {
-    title: 'Sprint 4b: HYPE Long',
-    text: 'Subquest 2 of 2. Switch the market to HYPE-USDC, choose Buy / Long, set a size, and Place Order. Next unlocks when the HYPE long is open.',
+    title: 'Sprint 4a: Short ETH',
+    text: 'Subquest 2. ETH is selected. Click Sell / Short, set a size, and Place Order. Next unlocks when the ETH short is open.',
+    target: '#shortBtn',
+    preview: 'Sell / Short',
+    require: 'ethShort',
+    cat: 'Click Sell / Short and Place Order.',
+    noBlackout: true
+  },
+  {
+    title: 'Sprint 4b: Find HYPE',
+    text: 'Subquest 1. Open the market dropdown and select HYPE-USDC.',
     target: '#marketDropdown',
-    preview: 'HYPE long',
+    preview: 'HYPE-USDC',
+    require: 'selectHype',
+    cat: 'Select HYPE-USDC from the market dropdown.',
+    noBlackout: true
+  },
+  {
+    title: 'Sprint 4b: Long HYPE',
+    text: 'Subquest 2. HYPE is selected. Click Buy / Long, set a size, and Place Order. Next unlocks when the HYPE long is open.',
+    target: '#longBtn',
+    preview: 'Buy / Long',
     require: 'hypeLong',
-    cat: 'Open a HYPE long.',
+    cat: 'Click Buy / Long and Place Order.',
     noBlackout: true
   },
   {
@@ -1190,7 +1208,7 @@ function checkStepProgress() {
   if (!s || !s.require) {
     nextBtn.disabled = false;
     nextBtn.style.opacity = '1';
-    nextBtn.textContent = s && s.endSprint ? 'End Sprint' : (state.guideStep === guideSteps.length - 1 ? 'Finish' : 'Next');
+    nextBtn.textContent = s && s.endSprint ? 'Finished' : (state.guideStep === guideSteps.length - 1 ? 'Finished' : 'Next');
     return;
   }
   let ok = false;
@@ -1216,8 +1234,12 @@ function checkStepProgress() {
     ok = window.limitPlaced === true;
   } else if (s.require === 'limitCancel') {
     ok = window.limitCancelled === true;
+  } else if (s.require === 'selectEth') {
+    ok = currentMarket === 'ETH-USDC';
   } else if (s.require === 'ethShort') {
     ok = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short');
+  } else if (s.require === 'selectHype') {
+    ok = currentMarket === 'HYPE-USDC';
   } else if (s.require === 'hypeLong') {
     ok = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long');
   } else if (s.require === 'tpsl') {
