@@ -49,7 +49,12 @@ function initChart() {
   // Resize
   new ResizeObserver(() => {
     state.chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+    repositionLimitXs();
   }).observe(container);
+
+  // Keep limit X buttons on the line when the chart is scrolled or scaled
+  state.chart.timeScale().subscribeVisibleLogicalRangeChange(() => repositionLimitXs());
+  state.chart.subscribeCrosshairMove(() => repositionLimitXs());
 
   // Chart click no longer closes — use the X on the position line instead
 }
@@ -321,21 +326,33 @@ function drawLimitLine(price, side, id) {
     axisLabelVisible: true,
     title: `LIMIT ${side.toUpperCase()} @ ${price.toFixed(0)}`
   });
-  // Add an X on the chart to cancel this limit
   const chartEl = document.getElementById('chart');
   const xBtn = document.createElement('div');
   xBtn.className = 'pos-line-x';
   xBtn.id = 'limitX-' + id;
   xBtn.textContent = '✕';
   xBtn.title = 'Cancel limit';
-  const y = state.candleSeries.priceToCoordinate(price);
-  xBtn.style.top = (y != null ? y : 50) + 'px';
-  xBtn.style.right = '120px';
-  xBtn.onclick = (e) => {
-    e.stopPropagation();
-    cancelLimit(id);
-  };
+  xBtn.dataset.price = price;
+  xBtn.style.right = '90px';
+  xBtn.onclick = (e) => { e.stopPropagation(); cancelLimit(id); };
   chartEl.appendChild(xBtn);
+  repositionLimitXs();
+  // Center the visible price range on the limit so the line and X are in view
+  const range = state.price * 0.02;
+  state.candleSeries.applyOptions && state.chart.priceScale('right').applyOptions({});
+  try {
+    state.chart.priceScale('right').setVisibleRange?.({ from: price - range, to: price + range });
+  } catch (e) { /* ignore */ }
+}
+function repositionLimitXs() {
+  if (!state.candleSeries) return;
+  document.querySelectorAll('[id^="limitX-"]').forEach(x => {
+    const price = parseFloat(x.dataset.price);
+    const y = state.candleSeries.priceToCoordinate(price);
+    if (y == null) { x.style.display = 'none'; return; }
+    x.style.display = 'flex';
+    x.style.top = y + 'px';
+  });
 }
 function cancelLimit(id) {
   limitOrders = limitOrders.filter(o => o.id !== id);
