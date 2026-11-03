@@ -708,7 +708,12 @@ function bindEvents() {
     if (v === '') return;
     state.guideStep = +v;
     e.target.value = '';
-    // Kick-start the guide if it isn't open
+    // Top up margin when jumping to order form or beyond
+    if (+v >= 3 && state.balance < 1000) {
+      state.balance = 1000;
+      updateUI();
+      showToast('Margin topped up to 1000 USDC');
+    }
     if (!document.getElementById('guideOverlay').classList.contains('active')) {
       document.getElementById('guideOverlay').classList.add('active');
     }
@@ -1068,13 +1073,22 @@ const guideSteps = [
     cat: 'Click the ✕ on the limit line to cancel.'
   },
   {
-    title: 'Sprint 4: Multi-Market Mission',
-    text: 'Open two positions to finish this mission: an ETH short and a HYPE long. Switch market, pick the side, set a size, and Place Order for each. Next unlocks only when both are open.',
+    title: 'Sprint 4a: ETH Short',
+    text: 'Subquest 1 of 2. Switch the market to ETH-USDC, choose Sell / Short, set a size, and Place Order. Next unlocks when the ETH short is open. Margin is topped up so you can trade.',
     target: '#marketDropdown',
-    preview: 'ETH short + HYPE long',
-    require: 'mission',
-    cat: 'ETH short and HYPE long. Both must be open.',
-    endSprint: false
+    preview: 'ETH short',
+    require: 'ethShort',
+    cat: 'Open an ETH short.',
+    noBlackout: true
+  },
+  {
+    title: 'Sprint 4b: HYPE Long',
+    text: 'Subquest 2 of 2. Switch the market to HYPE-USDC, choose Buy / Long, set a size, and Place Order. Next unlocks when the HYPE long is open.',
+    target: '#marketDropdown',
+    preview: 'HYPE long',
+    require: 'hypeLong',
+    cat: 'Open a HYPE long.',
+    noBlackout: true
   },
   {
     title: 'Sprint 5: Support & Resistance',
@@ -1183,10 +1197,10 @@ function checkStepProgress() {
     ok = window.limitPlaced === true;
   } else if (s.require === 'limitCancel') {
     ok = window.limitCancelled === true;
-  } else if (s.require === 'mission') {
-    const ethShort = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short');
-    const hypeLong = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long');
-    ok = ethShort && hypeLong;
+  } else if (s.require === 'ethShort') {
+    ok = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short');
+  } else if (s.require === 'hypeLong') {
+    ok = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long');
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -1322,7 +1336,7 @@ function showGuideStep() {
   const pop = document.getElementById('leveragePopover');
   if (pop) pop.style.display = 'none';
 
-  if (s.target) {
+  if (s.target && !s.noBlackout) {
     const el = document.querySelector(s.target);
     if (el) {
       let r = el.getBoundingClientRect();
