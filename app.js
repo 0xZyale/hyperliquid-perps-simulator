@@ -305,13 +305,13 @@ function placeLimitOrder() {
   const size = parseFloat(document.getElementById('sizeInput').value) || 0.01;
   const id = 'lim-' + Date.now();
   limitOrders.push({ id, market: currentMarket, side: state.side, price: px, size });
-  drawLimitLine(px, state.side);
+  drawLimitLine(px, state.side, id);
   showToast(`Limit ${state.side} @ ${px.toFixed(1)} (${pct}%)`);
-  hypurrSay(`Limit at ${px.toFixed(1)} (${pct}% from market). It fills only if price reaches it.`, 3000);
+  hypurrSay(`Limit at ${px.toFixed(1)}. Click the ✕ on the line to cancel.`, 3000);
   window.limitPlaced = true;
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
-function drawLimitLine(price, side) {
+function drawLimitLine(price, side, id) {
   if (!state.candleSeries) return;
   state.candleSeries.createPriceLine({
     price,
@@ -319,8 +319,32 @@ function drawLimitLine(price, side) {
     lineWidth: 1,
     lineStyle: LightweightCharts.LineStyle.Dotted,
     axisLabelVisible: true,
-    title: `LIMIT ${side.toUpperCase()} @ ${price}`
+    title: `LIMIT ${side.toUpperCase()} @ ${price.toFixed(0)}`
   });
+  // Add an X on the chart to cancel this limit
+  const chartEl = document.getElementById('chart');
+  const xBtn = document.createElement('div');
+  xBtn.className = 'pos-line-x';
+  xBtn.id = 'limitX-' + id;
+  xBtn.textContent = '✕';
+  xBtn.title = 'Cancel limit';
+  const y = state.candleSeries.priceToCoordinate(price);
+  xBtn.style.top = (y != null ? y : 50) + 'px';
+  xBtn.style.right = '120px';
+  xBtn.onclick = (e) => {
+    e.stopPropagation();
+    cancelLimit(id);
+  };
+  chartEl.appendChild(xBtn);
+}
+function cancelLimit(id) {
+  limitOrders = limitOrders.filter(o => o.id !== id);
+  const x = document.getElementById('limitX-' + id);
+  if (x) x.remove();
+  window.limitCancelled = true;
+  showToast('Limit cancelled');
+  hypurrSay('Limit cancelled. The line is gone.', 2000);
+  if (typeof checkStepProgress === 'function') checkStepProgress();
 }
 function drawSrScenario() {
   if (!state.candleSeries) return;
@@ -608,8 +632,11 @@ function bindEvents() {
     if (e.target.checked) startPyth();
     else stopPyth();
   };
-  document.getElementById('hypurrCat').onclick = () => {
-    openFaq();
+  document.getElementById('hypurrCat').onclick = (e) => {
+    if (window.hypurrDidDrag) { window.hypurrDidDrag = false; return; }
+    const panel = document.getElementById('faqPanel');
+    if (panel.style.display === 'flex') closeFaq();
+    else openFaq();
   };
   document.getElementById('faqClose').onclick = closeFaq;
   document.querySelectorAll('.faq-topics button').forEach(btn => {
@@ -731,11 +758,11 @@ function bindEvents() {
   const hypurrEl = document.getElementById('hypurr');
   const hypurrImg = document.getElementById('hypurrCat');
   hypurrImg.addEventListener('dragstart', (e) => e.preventDefault());
-  let dragging = false, dragOffX = 0, dragOffY = 0;
+  let dragging = false, dragOffX = 0, dragOffY = 0, moved = false;
   hypurrEl.addEventListener('mousedown', (e) => {
     if (e.target.id === 'hypurrBubble') return;
-    e.preventDefault();
     dragging = true;
+    moved = false;
     hypurrUserMoved = true;
     const r = hypurrEl.getBoundingClientRect();
     dragOffX = e.clientX - r.left;
@@ -744,12 +771,18 @@ function bindEvents() {
   });
   document.addEventListener('mousemove', (e) => {
     if (!dragging) return;
+    moved = true;
+    window.hypurrDidDrag = true;
     hypurrEl.style.left = (e.clientX - dragOffX) + 'px';
     hypurrEl.style.top = (e.clientY - dragOffY) + 'px';
     hypurrEl.style.right = 'auto';
     hypurrEl.style.bottom = 'auto';
   });
-  document.addEventListener('mouseup', () => { dragging = false; hypurrEl.style.cursor = ''; });
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    hypurrEl.style.cursor = '';
+    if (!moved) window.hypurrDidDrag = false;
+  });
 }
 
 async function loadCandles(interval) {
@@ -1020,11 +1053,19 @@ const guideSteps = [
   },
   {
     title: 'Place the Limit',
-    text: 'Current market price is shown beside the field. Enter a % away from market (negative for a long limit below, positive for a short limit above) and click Place Order. The limit appears as a dotted line on the chart. It only fills if price reaches it.',
+    text: 'Enter a % away from market and click Place Order. The limit appears as a dotted line on the chart with an ✕. Next unlocks only after Place Order.',
     target: '#limitPct',
     preview: '% away',
     require: 'limitPlaced',
-    cat: 'Enter % away from market, then Place Order. Watch the line.'
+    cat: 'Enter % away, then Place Order. Watch the line.'
+  },
+  {
+    title: 'Cancel the Limit',
+    text: 'Click the ✕ on the limit line on the chart to cancel it. The line disappears.',
+    target: '#chart',
+    preview: '✕ on limit',
+    require: 'limitCancel',
+    cat: 'Click the ✕ on the limit line to cancel.'
   },
   {
     title: 'Sprint 4: Multi-Market Mission',
@@ -1139,8 +1180,9 @@ function checkStepProgress() {
   } else if (s.require === 'limitType') {
     ok = orderType === 'limit';
   } else if (s.require === 'limitPlaced') {
-    const pct = parseFloat(document.getElementById('limitPct')?.value);
-    ok = window.limitPlaced === true || (!isNaN(pct) && pct !== 0);
+    ok = window.limitPlaced === true;
+  } else if (s.require === 'limitCancel') {
+    ok = window.limitCancelled === true;
   } else if (s.require === 'mission') {
     const ethShort = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short');
     const hypeLong = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long');
@@ -1266,13 +1308,15 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Hypurr: place one guide-length below the guide, offset so the bubble never overlaps
-  const guideH = 220;
-  hypurr.classList.add('with-guide');
-  hypurr.style.left = Math.max(20, leftPos) + 'px';
-  hypurr.style.top = Math.min(topPos + guideH + 24, window.innerHeight - 90) + 'px';
-  hypurr.style.right = 'auto';
-  hypurr.style.bottom = 'auto';
+  // Hypurr: place one guide-length below the guide, unless the user has dragged it
+  if (!hypurrUserMoved) {
+    const guideH = 220;
+    hypurr.classList.add('with-guide');
+    hypurr.style.left = Math.max(20, leftPos) + 'px';
+    hypurr.style.top = Math.min(topPos + guideH + 24, window.innerHeight - 140) + 'px';
+    hypurr.style.right = 'auto';
+    hypurr.style.bottom = 'auto';
+  }
 
   // Close any open leverage popover so it doesn't cover the guide
   const pop = document.getElementById('leveragePopover');

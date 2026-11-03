@@ -494,7 +494,7 @@ input[type="number"], input[type="text"], select {
 }
 .hypurr {
   position: fixed;
-  bottom: 20px;
+  bottom: 80px;
   right: 20px;
   z-index: 2000;
   cursor: grab;
