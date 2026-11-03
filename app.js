@@ -159,6 +159,14 @@ function updateBook() {
 }
 
 // ---------- UI Updates ----------
+function updateSizeUnit() {
+  const sel = document.getElementById('sizeUnit');
+  if (!sel) return;
+  const coin = currentMarket.split('-')[0];
+  const cur = sel.value;
+  sel.innerHTML = `<option>${coin}</option><option>USDC</option>`;
+  if (cur === 'USDC') sel.value = 'USDC';
+}
 function updateUI() {
   document.getElementById('markPrice').textContent = state.price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   document.getElementById('available').textContent = state.balance.toFixed(2) + ' USDC';
@@ -314,27 +322,32 @@ function drawLimitLine(price, side) {
     title: `LIMIT ${side.toUpperCase()} @ ${price}`
   });
 }
-function drawSupportResistance() {
+function drawSrScenario() {
   if (!state.candleSeries) return;
-  const support = state.price * 0.985;
-  const resistance = state.price * 1.015;
+  // Simulated scenario: clear support and resistance with zones
+  const base = state.price;
+  const support = base * 0.97;
+  const resistance = base * 1.03;
   state.candleSeries.createPriceLine({
     price: support,
     color: '#66bb6a',
-    lineWidth: 1,
-    lineStyle: LightweightCharts.LineStyle.Dashed,
+    lineWidth: 2,
+    lineStyle: LightweightCharts.LineStyle.Solid,
     axisLabelVisible: true,
-    title: 'SUPPORT'
+    title: 'SUPPORT — buy'
   });
   state.candleSeries.createPriceLine({
     price: resistance,
     color: '#ef5350',
-    lineWidth: 1,
-    lineStyle: LightweightCharts.LineStyle.Dashed,
+    lineWidth: 2,
+    lineStyle: LightweightCharts.LineStyle.Solid,
     axisLabelVisible: true,
-    title: 'RESISTANCE'
+    title: 'RESISTANCE — sell'
   });
-  return { support, resistance };
+  // Zone boxes as extra lines bracketing the levels
+  state.candleSeries.createPriceLine({ price: support * 0.995, color: 'rgba(102,187,106,0.4)', lineWidth: 6, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: false, title: '' });
+  state.candleSeries.createPriceLine({ price: resistance * 1.005, color: 'rgba(239,83,80,0.4)', lineWidth: 6, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: false, title: '' });
+  hypurrSay('Green zone = support (buy). Red zone = resistance (sell).', 0);
 }
 function placeOrder() {
   if (orderType === 'limit') {
@@ -682,6 +695,7 @@ function bindEvents() {
   loadCandles(60);
   document.getElementById('marketDropdown').onchange = (e) => {
     currentMarket = e.target.value;
+    updateSizeUnit();
     const m = markets[currentMarket];
     if (m) {
       state.price = m.price;
@@ -933,6 +947,25 @@ const guideSteps = [
     cat: 'Enter % away from market, then Place Order. Watch the line.'
   },
   {
+    title: 'Sprint 4: Multi-Market Mission',
+    text: 'Open two positions to finish this mission: an ETH short and a HYPE long. Switch market, pick the side, set a size, and Place Order for each. Next unlocks only when both are open.',
+    target: '#marketDropdown',
+    preview: 'ETH short + HYPE long',
+    require: 'mission',
+    cat: 'ETH short and HYPE long. Both must be open.',
+    endSprint: false
+  },
+  {
+    title: 'Sprint 5: Support & Resistance',
+    text: 'This chart is a simulated scenario. The green zone is support — buy (long) when price holds there. The red zone is resistance — sell (short) when price stalls there. Lines mark the levels; boxes show the zones.',
+    target: '#chart',
+    preview: 'Support / Resistance',
+    cat: 'Buy support, sell resistance.',
+    onEnter: 'srScenario',
+    showChart: true,
+    endSprint: true
+  },
+  {
     title: 'Done',
     text: 'Sprint 3 is done. You finished Bridge → Order form → Position management. Same flow on the real Hyperliquid app. Jump to… anytime to revisit.',
     target: null,
@@ -1028,6 +1061,10 @@ function checkStepProgress() {
   } else if (s.require === 'limitPlaced') {
     const pct = parseFloat(document.getElementById('limitPct')?.value);
     ok = window.limitPlaced === true || (!isNaN(pct) && pct !== 0);
+  } else if (s.require === 'mission') {
+    const ethShort = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short');
+    const hypeLong = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long');
+    ok = ethShort && hypeLong;
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -1084,10 +1121,13 @@ function showGuideStep() {
     const seal = document.getElementById('positionsSeal');
     if (seal) seal.classList.add('unlocked');
   }
+  if (s.onEnter === 'srScenario') {
+    drawSrScenario();
+  }
   if (s.onEnter === 'srDemo') {
     document.getElementById('tpslToggle').checked = true;
     document.getElementById('tpslInputs').style.display = 'block';
-    const levels = drawSupportResistance();
+    const levels = drawSrScenario();
     if (levels) {
       document.getElementById('tpPrice').value = levels.resistance.toFixed(1);
       document.getElementById('slPrice').value = (levels.support * 0.998).toFixed(1);
