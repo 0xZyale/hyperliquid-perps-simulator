@@ -11,8 +11,26 @@
 
   <!-- Hypurr Mascot -->
   <div class="hypurr" id="hypurr">
-    <div class="hypurr-bubble" id="hypurrBubble">Hey, I’m Hypurr — your assistant. Drag me anywhere. Click me for tips or Start Guide.</div>
-    <img class="hypurr-cat" id="hypurrCat" src="hypurr.png" alt="Hypurr — your assistant (drag me)" title="Hypurr — drag me around" draggable="false">
+    <div class="hypurr-bubble" id="hypurrBubble">Hey, I’m Hypurr — your assistant. Drag me anywhere. Click me for the FAQ.</div>
+    <img class="hypurr-cat" id="hypurrCat" src="hypurr.png" alt="Hypurr — your assistant (drag me)" title="Hypurr — click for FAQ, drag me around" draggable="false">
+  </div>
+  <div class="faq-panel" id="faqPanel" style="display:none;">
+    <div class="faq-header">
+      <strong>Hypurr FAQ</strong>
+      <button class="btn secondary small" id="faqClose">✕</button>
+    </div>
+    <div class="faq-topics" id="faqTopics">
+      <button data-topic="order">Order Form</button>
+      <button data-topic="positions">Positions</button>
+      <button data-topic="bridge">Bridge</button>
+      <button data-topic="limit">Limit</button>
+      <button data-topic="sr">Support / Resistance</button>
+      <button data-topic="mission">ETH / HYPE</button>
+    </div>
+    <div class="faq-other">
+      <input type="text" id="faqOther" placeholder="Other — type a keyword (e.g. order form)">
+    </div>
+    <div class="faq-list" id="faqList"></div>
   </div>
   <header>
     <div class="logo">

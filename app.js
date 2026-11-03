@@ -609,12 +609,16 @@ function bindEvents() {
     else stopPyth();
   };
   document.getElementById('hypurrCat').onclick = () => {
-    if (!document.getElementById('guideOverlay').classList.contains('active')) {
-      const tip = hypurrTips[Math.floor(Math.random() * hypurrTips.length)];
-      hypurrSay(tip, 4000);
-    } else {
-      hypurrSay(guideSteps[state.guideStep]?.cat || "Keep going!", 0);
-    }
+    openFaq();
+  };
+  document.getElementById('faqClose').onclick = closeFaq;
+  document.querySelectorAll('.faq-topics button').forEach(btn => {
+    btn.onclick = () => showFaqTopic(btn.dataset.topic);
+  });
+  document.getElementById('faqOther').oninput = (e) => {
+    const v = e.target.value.trim();
+    if (v.length >= 2) matchFaq(v);
+    else showFaqTopic(document.querySelector('.faq-topics button.active')?.dataset.topic || 'order');
   };
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
@@ -806,17 +810,93 @@ function startBridge(amount) {
 }
 
 // Hypurr tips (random when clicked outside guide)
-const hypurrTips = [
-  "Higher leverage multiplies both gains and losses. Size down when you crank it up.",
-  "Isolated only risks the margin on that one trade. Cross shares everything.",
-  "A tight stop-loss is your best friend. Define the max loss before you enter.",
-  "Partial closes let you take some profit while letting the rest run.",
-  "On the real app, click the position line on the chart to close fully.",
-  "Bridging takes time for security. Watch the notification — funds arrive after confirmation.",
-  "Margin required = notional ÷ leverage. Slide the % bar to commit what you want.",
-  "Trading is about minimizing losses and maximizing gains. Risk management first."
-];
-
+const faqBank = {
+  order: [
+    { q: 'Where is the order form?', a: 'Right side of the screen — Size, Type, % Margin, Place Order.', action: null },
+    { q: 'What is the point of the order form?', a: 'It is where you set size, leverage, and side, then open a position.', action: null },
+    { q: 'Start order form guide', a: 'Jumping to Sprint 2: Order Form.', action: 3 },
+    { q: 'List all order form guides', a: 'Sprint 2 covers Leverage, Commit Margin, Cross vs Isolated, and Place the Trade.', action: null }
+  ],
+  positions: [
+    { q: 'Where is the positions table?', a: 'Bottom of the screen. It unlocks after the order form sprint.', action: null },
+    { q: 'How do I close a position?', a: 'Use Limit, Market, Trailing, or Reverse in the row, or the ✕ on the chart line.', action: 8 },
+    { q: 'Start positions guide', a: 'Jumping to Sprint 3: Positions.', action: 8 }
+  ],
+  bridge: [
+    { q: 'How do I get funds?', a: 'Click Deposit (top-right). Bridging takes ~10s for security.', action: 1 },
+    { q: 'Start bridge guide', a: 'Jumping to Sprint 1: Bridge.', action: 1 }
+  ],
+  limit: [
+    { q: 'What is a limit order?', a: 'It fills only at your price or better. Must be away from the market.', action: null },
+    { q: 'How do I set a limit?', a: 'Switch Type to Limit, enter a % away (negative for long, positive for short), then Place Order.', action: 12 },
+    { q: 'Start limit guide', a: 'Jumping to Limit Orders.', action: 12 }
+  ],
+  sr: [
+    { q: 'What is support and resistance?', a: 'Support is where price tends to hold (buy). Resistance is where it stalls (sell).', action: null },
+    { q: 'Start support/resistance guide', a: 'Jumping to Sprint 5.', action: 16 }
+  ],
+  mission: [
+    { q: 'What is the multi-market mission?', a: 'Open an ETH short and a HYPE long to complete Sprint 4.', action: 15 },
+    { q: 'Start ETH/HYPE mission', a: 'Jumping to Sprint 4.', action: 15 }
+  ]
+};
+function openFaq() {
+  document.getElementById('faqPanel').style.display = 'flex';
+  showFaqTopic('order');
+}
+function closeFaq() {
+  document.getElementById('faqPanel').style.display = 'none';
+}
+function showFaqTopic(topic) {
+  document.querySelectorAll('.faq-topics button').forEach(b => b.classList.toggle('active', b.dataset.topic === topic));
+  const list = document.getElementById('faqList');
+  const items = faqBank[topic] || [];
+  list.innerHTML = items.map((it, i) => `<div class="faq-item" data-topic="${topic}" data-i="${i}"><div>${it.q}</div><div class="faq-answer">${it.a}</div></div>`).join('');
+  list.querySelectorAll('.faq-item').forEach(el => {
+    el.onclick = () => {
+      const it = faqBank[el.dataset.topic][el.dataset.i];
+      if (it.action != null) {
+        closeFaq();
+        state.guideStep = it.action;
+        if (!document.getElementById('guideOverlay').classList.contains('active')) {
+          document.getElementById('guideOverlay').classList.add('active');
+        }
+        showGuideStep();
+      } else {
+        hypurrSay(it.a, 5000);
+      }
+    };
+  });
+}
+function matchFaq(query) {
+  const q = query.toLowerCase();
+  const hits = [];
+  Object.entries(faqBank).forEach(([topic, items]) => {
+    items.forEach((it, i) => {
+      if (it.q.toLowerCase().includes(q) || it.a.toLowerCase().includes(q) || topic.includes(q)) {
+        hits.push({ ...it, topic, i });
+      }
+    });
+  });
+  const list = document.getElementById('faqList');
+  if (!hits.length) { list.innerHTML = '<div class="faq-answer">No match. Try order form, positions, bridge, limit, support.</div>'; return; }
+  list.innerHTML = hits.map(it => `<div class="faq-item" data-topic="${it.topic}" data-i="${it.i}"><div>${it.q}</div><div class="faq-answer">${it.a}</div></div>`).join('');
+  list.querySelectorAll('.faq-item').forEach(el => {
+    el.onclick = () => {
+      const it = faqBank[el.dataset.topic][el.dataset.i];
+      if (it.action != null) {
+        closeFaq();
+        state.guideStep = it.action;
+        if (!document.getElementById('guideOverlay').classList.contains('active')) {
+          document.getElementById('guideOverlay').classList.add('active');
+        }
+        showGuideStep();
+      } else {
+        hypurrSay(it.a, 5000);
+      }
+    };
+  });
+}
 function hypurrSay(text, duration = 0) {
   const bubble = document.getElementById('hypurrBubble');
   if (!bubble) return;
