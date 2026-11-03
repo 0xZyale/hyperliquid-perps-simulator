@@ -482,23 +482,17 @@ input[type="number"], input[type="text"], select {
 }
 .faq-item:hover { color: var(--accent); }
 .faq-answer { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  position: fixed;
-  z-index: 3100;
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  pointer-events: none;
-  bottom: 20px;
-  right: 20px;
-  user-select: none;
-}
 .hypurr {
   position: fixed;
   bottom: 80px;
   right: 20px;
-  z-index: 2000;
+  z-index: 3100;
   cursor: grab;
   user-select: none;
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
 }
 .hypurr-cat {
   width: 64px;
