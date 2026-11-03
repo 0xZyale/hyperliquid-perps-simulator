@@ -1385,6 +1385,20 @@ function showGuideStep() {
           };
         }
       }
+      if (s.require === 'limitPlaced') {
+        const place = document.getElementById('placeOrder');
+        if (place) {
+          const pr = place.getBoundingClientRect();
+          r = {
+            left: Math.min(r.left, pr.left),
+            top: Math.min(r.top, pr.top),
+            right: Math.max(r.right, pr.right),
+            bottom: Math.max(r.bottom, pr.bottom),
+            width: Math.max(r.right, pr.right) - Math.min(r.left, pr.left),
+            height: Math.max(r.bottom, pr.bottom) - Math.min(r.top, pr.top)
+          };
+        }
+      }
       if (s.require === 'margin') {
         const calc = document.getElementById('calcBox');
         if (calc) {
