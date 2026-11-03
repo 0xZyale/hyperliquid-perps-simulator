@@ -316,7 +316,14 @@ function placeLimitOrder() {
   window.limitPlaced = true;
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
-function drawLimitLine(price, side, id) {
+function refreshLimitLines() {
+  // Remove all limit X buttons, then redraw only the current market's
+  document.querySelectorAll('[id^="limitX-"]').forEach(x => x.remove());
+  limitOrders.filter(o => o.market === currentMarket).forEach(o => {
+    drawLimitLine(o.price, o.side, o.id, true);
+  });
+}
+function drawLimitLine(price, side, id, skipStore) {
   if (!state.candleSeries) return;
   state.candleSeries.createPriceLine({
     price,
@@ -337,12 +344,6 @@ function drawLimitLine(price, side, id) {
   xBtn.onclick = (e) => { e.stopPropagation(); cancelLimit(id); };
   chartEl.appendChild(xBtn);
   repositionLimitXs();
-  // Center the visible price range on the limit so the line and X are in view
-  const range = state.price * 0.02;
-  state.candleSeries.applyOptions && state.chart.priceScale('right').applyOptions({});
-  try {
-    state.chart.priceScale('right').setVisibleRange?.({ from: price - range, to: price + range });
-  } catch (e) { /* ignore */ }
 }
 function repositionLimitXs() {
   if (!state.candleSeries) return;
@@ -725,11 +726,15 @@ function bindEvents() {
     if (v === '') return;
     state.guideStep = +v;
     e.target.value = '';
-    // Top up margin when jumping to order form or beyond
     if (+v >= 3 && state.balance < 1000) {
       state.balance = 1000;
       updateUI();
       showToast('Margin topped up to 1000 USDC');
+    }
+    // Anything past the positions sprint unlocks the table
+    if (+v >= 8) {
+      const seal = document.getElementById('positionsSeal');
+      if (seal) seal.classList.add('unlocked');
     }
     if (!document.getElementById('guideOverlay').classList.contains('active')) {
       document.getElementById('guideOverlay').classList.add('active');
@@ -753,8 +758,16 @@ function bindEvents() {
     if (m) {
       state.price = m.price;
       loadCandles(+document.querySelector('.tf-btn.active')?.dataset.tf || 60);
+      // Keep the margin % and repopulate size for the new price
+      const pct = +document.getElementById('pctSlider').value / 100;
+      if (pct > 0 && state.price > 0) {
+        const maxNotional = state.balance * state.leverage;
+        const size = (maxNotional * pct) / state.price;
+        document.getElementById('sizeInput').value = size > 0 ? size.toFixed(4) : '';
+      }
       updateUI();
       updateBook();
+      refreshLimitLines();
     }
   };
   document.getElementById('orderTypeMarket').onclick = () => {
