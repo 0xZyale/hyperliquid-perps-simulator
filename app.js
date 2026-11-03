@@ -1020,6 +1020,7 @@ const guideSteps = [
     target: '.bottom',
     preview: 'Market',
     require: 'partial',
+    precondition: 'hasPosition',
     cat: 'Use Limit / Market / Trailing / Reverse to close.',
     onEnter: 'unlockPositions'
   },
@@ -1030,6 +1031,7 @@ const guideSteps = [
     preview: 'lineX',
     previewHtml: true,
     require: 'full',
+    precondition: 'hasPosition',
     cat: 'Click the ✕ on the position line to open Market Close.'
   },
   {
@@ -1211,8 +1213,36 @@ function checkStepProgress() {
   nextBtn.style.opacity = ok ? '1' : '0.5';
   nextBtn.textContent = ok ? 'Next' : 'Do the action first';
 }
+function checkPrecondition(s) {
+  if (!s || !s.precondition) return true;
+  if (s.precondition === 'hasPosition') return state.positions.length > 0;
+  return true;
+}
 function showGuideStep() {
   const s = guideSteps[state.guideStep];
+  // Precondition gate: if not met, redirect to opening a position first
+  if (s && !checkPrecondition(s)) {
+    document.getElementById('guideTitle').textContent = 'Open a position first';
+    document.getElementById('guideText').textContent = 'This step needs an open perp. Set a size and click Place Order. Once a position is in the table, this step continues.';
+    document.getElementById('guidePreview').innerHTML = '<button class="btn preview-btn">Place Order</button> ← look for this';
+    hypurrSay('No open position. Place one first, then we continue.');
+    const nextBtn = document.getElementById('guideNext');
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '0.5';
+    nextBtn.textContent = 'Open a position first';
+    // Point at Place Order, no blackout so they can use the form
+    document.getElementById('spotlight').style.display = 'none';
+    document.getElementById('guideArrow').style.display = 'none';
+    if (state.balance < 1000) { state.balance = 1000; updateUI(); }
+    // Watch for a position, then resume
+    const watcher = setInterval(() => {
+      if (state.positions.length > 0) {
+        clearInterval(watcher);
+        showGuideStep();
+      }
+    }, 500);
+    return;
+  }
   document.getElementById('guideTitle').textContent = s.title;
   document.getElementById('guideText').textContent = s.text;
   document.getElementById('guideBack').style.visibility = state.guideStep === 0 ? 'hidden' : 'visible';
