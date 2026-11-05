@@ -665,6 +665,7 @@ function bindEvents() {
     if (v.length >= 2) matchFaq(v);
     else showFaqTopic(document.querySelector('.faq-topics button.active')?.dataset.topic || 'order');
   };
+  document.getElementById('guideBtn').onclick = startGuide;
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
   // Floating tooltips — only after 1s hover, and only if tooltip mode is on
