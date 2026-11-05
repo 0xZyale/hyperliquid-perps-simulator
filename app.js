@@ -665,6 +665,13 @@ function bindEvents() {
     if (v.length >= 2) matchFaq(v);
     else showFaqTopic(document.querySelector('.faq-topics button.active')?.dataset.topic || 'order');
   };
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      showToast(tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1) + ' (simulated)');
+    };
+  });
   document.getElementById('guideBtn').onclick = startGuide;
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
