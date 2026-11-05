@@ -681,7 +681,8 @@ function bindEvents() {
   document.body.addEventListener('mouseover', (e) => {
     clearTimeout(tipTimer);
     tip.style.display = 'none';
-    if (!document.getElementById('tooltipMode').checked) return;
+    const tipMode = document.getElementById('tooltipMode');
+    if (!tipMode || !tipMode.checked) return;
     const el = e.target.closest('[data-tooltip]');
     if (!el) return;
     const text = el.getAttribute('data-tooltip');
