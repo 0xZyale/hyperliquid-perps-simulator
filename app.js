@@ -201,6 +201,7 @@ function renderPositions() {
     return `<tr>
       <td class="${p.side === 'long' ? 'pos' : 'neg'}">${p.side.toUpperCase()}</td>
       <td>${p.market}</td>
+      <td>${p.isolated ? 'Isolated' : 'Cross'}</td>
       <td>${p.size.toFixed(4)}</td>
       <td>${p.entry.toFixed(1)}</td>
       <td>${state.price.toFixed(1)}</td>
@@ -447,7 +448,8 @@ function placeOrder() {
     : state.price * (1 + 1 / state.leverage - maint);
 
   state.positions.push({
-    id, market: currentMarket, side: state.side, size, entry: state.price, margin, leverage: state.leverage, liq
+    id, market: currentMarket, side: state.side, size, entry: state.price, margin, leverage: state.leverage, liq,
+    isolated: state.isolated
   });
 
   document.getElementById('sizeInput').value = '';
@@ -549,6 +551,29 @@ function closePosition(id, silent = false) {
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
 
+function seedCrossIsolatedDemo() {
+  state.positions = state.positions.filter(p => p.id !== 'iso-win' && p.id !== 'cross-loss');
+  const price = state.price;
+  // Isolated winner: entry below current price, profit
+  const isoEntry = price * 0.97;
+  const isoSize = 0.02;
+  const isoMargin = (isoSize * isoEntry) / 10;
+  state.positions.push({
+    id: 'iso-win', market: currentMarket, side: 'long', size: isoSize,
+    entry: isoEntry, margin: isoMargin, leverage: 10,
+    liq: isoEntry * (1 - 1 / 10 + 0.005), isolated: true
+  });
+  // Cross loser: entry above current price, loss, whole balance is collateral
+  const crossEntry = price * 1.03;
+  const crossSize = 0.02;
+  const crossMargin = (crossSize * crossEntry) / 10;
+  state.positions.push({
+    id: 'cross-loss', market: currentMarket, side: 'long', size: crossSize,
+    entry: crossEntry, margin: crossMargin, leverage: 10,
+    liq: crossEntry * (1 - 1 / 10 + 0.005), isolated: false
+  });
+  updateUI();
+}
 function seedDemoPosition() {
   if (state.positions.length > 0) return;
   if (state.balance < 200) state.balance += 2000;
@@ -1245,6 +1270,25 @@ const guideSteps = [
     noBlackout: true
   },
   {
+    title: 'Cross vs Isolated: the winner',
+    text: 'Congrats — the isolated long went according to plan. Close it. Available to Trade goes up by the margin plus profit. The rest of your balance never backed this trade.',
+    target: '.bottom',
+    preview: 'Close isolated',
+    require: 'closedIsolated',
+    cat: 'Close the isolated winner. Available margin rises. Balance did not back it.',
+    onEnter: 'seedModes',
+    noBlackout: true
+  },
+  {
+    title: 'Cross vs Isolated: the loser',
+    text: 'Now close the cross long. It is losing. The whole Available to Trade was collateral — if the loss had eaten the margin required to hold it, the trade would have been closed for you.',
+    target: '.bottom',
+    preview: 'Close cross',
+    require: 'closedCross',
+    cat: 'Close the cross loser. Whole balance was collateral.',
+    noBlackout: true
+  },
+  {
     title: 'Done',
     text: 'Sprint 3 is done. You finished Bridge → Order form → Position management. Same flow on the real Hyperliquid app. Jump to… anytime to revisit.',
     target: null,
@@ -1368,6 +1412,10 @@ function checkStepProgress() {
     const sl = parseFloat(document.getElementById('slPrice').value);
     const on = document.getElementById('tpslToggle').checked;
     ok = on && tp > 0 && sl > 0 && (orderPlaced || state.positions.length > 0);
+  } else if (s.require === 'closedIsolated') {
+    ok = !state.positions.some(p => p.id === 'iso-win');
+  } else if (s.require === 'closedCross') {
+    ok = !state.positions.some(p => p.id === 'cross-loss');
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -1457,6 +1505,10 @@ function showGuideStep() {
   if (s.onEnter === 'unlockPositions') {
     const seal = document.getElementById('positionsSeal');
     if (seal) seal.classList.add('unlocked');
+  }
+  if (s.onEnter === 'seedModes') {
+    seedCrossIsolatedDemo();
+    hypurrSay('Isolated winner and cross loser are in the table. Close the isolated one first.', 0);
   }
   if (s.onEnter === 'srScenario') {
     drawSrScenario();
