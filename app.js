@@ -315,7 +315,11 @@ function placeLimitOrder() {
   limitOrders.push({ id, market: currentMarket, side: state.side, price: px, size });
   drawLimitLine(px, state.side, id);
   showToast(`Limit ${state.side} @ ${px.toFixed(1)} (${pct}%)`);
-  hypurrSay(`Limit at ${px.toFixed(1)}. Click the ✕ on the line to cancel.`, 3000);
+  hypurrSay(`Limit at ${px.toFixed(1)}. Look at the chart — the line is in the middle. Also check the Open Orders tab.`, 4000);
+  // Point the user at the chart and open orders
+  const ordersTab = document.querySelector('.tab[data-tab="orders"]');
+  if (ordersTab) ordersTab.classList.add('glow');
+  setTimeout(() => ordersTab && ordersTab.classList.remove('glow'), 4000);
   window.limitPlaced = true;
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
@@ -333,29 +337,32 @@ function drawLimitLine(price, side, id, skipStore) {
     color: side === 'long' ? '#42a5f5' : '#ff9800',
     lineWidth: 1,
     lineStyle: LightweightCharts.LineStyle.Dotted,
-    axisLabelVisible: true,
-    title: `LIMIT ${side.toUpperCase()} @ ${price.toFixed(0)}`
+    axisLabelVisible: false,
+    title: ''
   });
+  // Combined label + X in the middle of the chart so the text is readable
   const chartEl = document.getElementById('chart');
-  const xBtn = document.createElement('div');
-  xBtn.className = 'pos-line-x';
-  xBtn.id = 'limitX-' + id;
-  xBtn.textContent = '✕';
-  xBtn.title = 'Cancel limit';
-  xBtn.dataset.price = price;
-  xBtn.style.right = '90px';
-  xBtn.onclick = (e) => { e.stopPropagation(); cancelLimit(id); };
-  chartEl.appendChild(xBtn);
+  const tag = document.createElement('div');
+  tag.className = 'limit-tag';
+  tag.id = 'limitX-' + id;
+  tag.dataset.price = price;
+  tag.innerHTML = `<span>LIMIT ${side.toUpperCase()} @ ${price.toFixed(0)}</span><button class="limit-tag-x">✕</button>`;
+  tag.querySelector('.limit-tag-x').onclick = (e) => { e.stopPropagation(); cancelLimit(id); };
+  chartEl.appendChild(tag);
   repositionLimitXs();
 }
 function repositionLimitXs() {
   if (!state.candleSeries) return;
+  const chartEl = document.getElementById('chart');
+  const w = chartEl.clientWidth;
   document.querySelectorAll('[id^="limitX-"]').forEach(x => {
     const price = parseFloat(x.dataset.price);
     const y = state.candleSeries.priceToCoordinate(price);
     if (y == null) { x.style.display = 'none'; return; }
     x.style.display = 'flex';
     x.style.top = y + 'px';
+    x.style.left = Math.max(20, w / 2 - 90) + 'px';
+    x.style.right = 'auto';
   });
 }
 function cancelLimit(id) {
@@ -1119,12 +1126,13 @@ const guideSteps = [
   },
   {
     title: 'Sprint 3: TP / SL + Support / Resistance',
-    text: 'The chart shows a hypothetical support (green) and resistance (red). Place TP at or just under resistance, and SL just beneath support. That way the stop is below the level that should hold, and the target is where price has stalled before. A 1:3 RR (risk 1 to earn 3) is a solid setup.',
+    text: 'The chart shows support (green) and resistance (red). Place TP at or just under resistance, and SL just beneath support.',
     target: '#tpslBox',
     preview: 'TP / SL',
     require: 'tpsl',
-    cat: 'TP at resistance, SL under support. 1:3 RR.',
-    onEnter: 'srDemo'
+    cat: 'TP at resistance, SL under support.',
+    onEnter: 'srDemo',
+    showChart: true
   },
   {
     title: 'Select an Asset',
