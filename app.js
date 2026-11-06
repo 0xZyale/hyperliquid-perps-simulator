@@ -369,30 +369,35 @@ function cancelLimit(id) {
 }
 function drawSrScenario() {
   if (!state.candleSeries) return;
-  // Simulated scenario: clear support and resistance with zones
   const base = state.price;
-  const support = base * 0.97;
-  const resistance = base * 1.03;
-  state.candleSeries.createPriceLine({
-    price: support,
-    color: '#66bb6a',
-    lineWidth: 2,
-    lineStyle: LightweightCharts.LineStyle.Solid,
-    axisLabelVisible: true,
-    title: 'SUPPORT — buy'
-  });
-  state.candleSeries.createPriceLine({
-    price: resistance,
-    color: '#ef5350',
-    lineWidth: 2,
-    lineStyle: LightweightCharts.LineStyle.Solid,
-    axisLabelVisible: true,
-    title: 'RESISTANCE — sell'
-  });
-  // Zone boxes as extra lines bracketing the levels
-  state.candleSeries.createPriceLine({ price: support * 0.995, color: 'rgba(102,187,106,0.4)', lineWidth: 6, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: false, title: '' });
-  state.candleSeries.createPriceLine({ price: resistance * 1.005, color: 'rgba(239,83,80,0.4)', lineWidth: 6, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: false, title: '' });
-  hypurrSay('Green zone = support (buy). Red zone = resistance (sell).', 0);
+  const support = base * 0.94;
+  const resistance = base * 1.06;
+  // Thick zone boxes (like the reference chart)
+  for (let i = -3; i <= 3; i++) {
+    state.candleSeries.createPriceLine({
+      price: support * (1 + i * 0.002),
+      color: i === 0 ? '#66bb6a' : 'rgba(102,187,106,0.35)',
+      lineWidth: i === 0 ? 3 : 8,
+      lineStyle: LightweightCharts.LineStyle.Solid,
+      axisLabelVisible: i === 0,
+      title: i === 0 ? 'SUPPORT — buy' : ''
+    });
+    state.candleSeries.createPriceLine({
+      price: resistance * (1 + i * 0.002),
+      color: i === 0 ? '#ef5350' : 'rgba(239,83,80,0.35)',
+      lineWidth: i === 0 ? 3 : 8,
+      lineStyle: LightweightCharts.LineStyle.Solid,
+      axisLabelVisible: i === 0,
+      title: i === 0 ? 'RESISTANCE — sell' : ''
+    });
+  }
+  // Zoom out so both zones are on screen
+  try {
+    const span = base * 0.12;
+    state.chart.priceScale('right').setVisibleRange?.({ from: base - span, to: base + span });
+  } catch (e) { /* ignore */ }
+  hypurrSay('Green box = support (buy). Red box = resistance (sell). Drag the chart if a zone is off-screen.', 0);
+  return { support, resistance };
 }
 function placeOrder() {
   if (orderType === 'limit') {
@@ -1191,13 +1196,22 @@ const guideSteps = [
   },
   {
     title: 'Sprint 5: Support & Resistance',
-    text: 'This chart is a simulated scenario. The green zone is support — buy (long) when price holds there. The red zone is resistance — sell (short) when price stalls there. Lines mark the levels; boxes show the zones.',
+    text: 'Green box = support (buy). Red box = resistance (sell). Drag the chart if a zone is off-screen.',
     target: '#chart',
     preview: 'Support / Resistance',
-    cat: 'Buy support, sell resistance.',
+    cat: 'Buy support, sell resistance. Drag to see both zones.',
     onEnter: 'srScenario',
-    showChart: true,
-    endSprint: true
+    showChart: true
+  },
+  {
+    title: 'Place with TP / SL',
+    text: 'Place any order (Market or Limit) with TP and SL on. Check the TP/SL box, set both, then Place Order.',
+    target: '#tpslBox',
+    preview: 'TP / SL',
+    require: 'orderWithTpsl',
+    cat: 'Any order type. TP and SL both set, then Place Order.',
+    onEnter: 'tpslDemo',
+    noBlackout: true
   },
   {
     title: 'Done',
@@ -1307,6 +1321,11 @@ function checkStepProgress() {
   } else if (s.require === 'posTpsl') {
     const pos = state.positions.find(p => p.market === currentMarket);
     ok = pos && pos.tp > 0 && pos.sl > 0;
+  } else if (s.require === 'orderWithTpsl') {
+    const tp = parseFloat(document.getElementById('tpPrice').value);
+    const sl = parseFloat(document.getElementById('slPrice').value);
+    const on = document.getElementById('tpslToggle').checked;
+    ok = on && tp > 0 && sl > 0 && (orderPlaced || state.positions.length > 0);
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
