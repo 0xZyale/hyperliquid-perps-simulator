@@ -1152,13 +1152,13 @@ const guideSteps = [
   },
   {
     title: 'Sprint 3: Full Close (Chart)',
-    text: 'Click the ✕ on the green entry line (right side of the chart). That opens the Market Close popup. Choose the size and confirm. Clicking the line itself does not close.',
+    text: 'Some platforms let you close from the chart. Click the ✕ on the entry line (right side). That opens the Market Close popup. Choose the size and confirm. Clicking the line itself does not close.',
     target: '#chart',
     preview: 'lineX',
     previewHtml: true,
     require: 'full',
     precondition: 'hasPosition',
-    cat: 'Click the ✕ on the position line to open Market Close.'
+    cat: 'On some platforms you can close from the chart. Click the ✕ on the position line.'
   },
   {
     title: 'Sprint 3: Set TP/SL from Positions',
