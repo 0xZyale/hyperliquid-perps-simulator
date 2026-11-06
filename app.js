@@ -406,7 +406,16 @@ function placeOrder() {
   const margin = notional / state.leverage;
 
   if (margin > state.balance) {
-    alert(`Insufficient margin. Need $${margin.toFixed(2)}, available $${state.balance.toFixed(2)}`);
+    const mr = document.getElementById('marginReq');
+    const av = document.getElementById('available');
+    if (mr) { mr.classList.add('glow'); mr.style.color = '#ff5252'; }
+    if (av) { av.classList.add('glow'); av.style.color = '#ff5252'; }
+    showToast(`Insufficient margin. Need $${margin.toFixed(2)}, available $${state.balance.toFixed(2)}`);
+    hypurrSay(`Need $${margin.toFixed(2)} but only $${state.balance.toFixed(2)} available. Lower size or deposit.`, 4000);
+    setTimeout(() => {
+      if (mr) { mr.classList.remove('glow'); mr.style.color = ''; }
+      if (av) { av.classList.remove('glow'); av.style.color = ''; }
+    }, 4000);
     return;
   }
 
@@ -777,6 +786,7 @@ function bindEvents() {
       updateBook();
       refreshLimitLines();
       fetchPythPrice();
+      if (typeof checkStepProgress === 'function') checkStepProgress();
     }
   };
   document.getElementById('orderTypeMarket').onclick = () => {
