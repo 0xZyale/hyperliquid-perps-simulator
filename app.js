@@ -1166,6 +1166,13 @@ const guideSteps = [
     cat: 'Click the ✕ on the limit line to cancel.'
   },
   {
+    title: 'Sprint 3 done',
+    text: 'Position management is done. Take a break. When you’re ready for the ETH short and HYPE long mission, click Resume Guide.',
+    target: null,
+    cat: 'Sprint 3 complete. Resume when ready for Sprint 4.',
+    endSprint: true
+  },
+  {
     title: 'Sprint 4a: Find ETH',
     text: 'Subquest 1. Open the market dropdown (top-left) and select ETH-USDC. There is no single ETH-short button — first find the market.',
     target: '#marketDropdown',
