@@ -101,11 +101,9 @@ function updateChart(newPrice) {
 }
 
 function updatePositionLine() {
-  if (state.priceLine) {
-    state.candleSeries.removePriceLine(state.priceLine);
-    state.priceLine = null;
-  }
-  // Remove old close-X if present
+  if (state.priceLine) { state.candleSeries.removePriceLine(state.priceLine); state.priceLine = null; }
+  if (state.tpLine) { state.candleSeries.removePriceLine(state.tpLine); state.tpLine = null; }
+  if (state.slLine) { state.candleSeries.removePriceLine(state.slLine); state.slLine = null; }
   const oldX = document.getElementById('posLineX');
   if (oldX) oldX.remove();
 
@@ -119,25 +117,30 @@ function updatePositionLine() {
       axisLabelVisible: true,
       title: `${pos.side.toUpperCase()} @ ${pos.entry.toFixed(1)}`
     });
-    // Add an X button on the entry line (right side) that opens Market Close
+    if (pos.tp) {
+      state.tpLine = state.candleSeries.createPriceLine({
+        price: pos.tp, color: '#3fb950', lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dotted,
+        axisLabelVisible: true, title: `TP @ ${pos.tp.toFixed(1)}`
+      });
+    }
+    if (pos.sl) {
+      state.slLine = state.candleSeries.createPriceLine({
+        price: pos.sl, color: '#f85149', lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dotted,
+        axisLabelVisible: true, title: `SL @ ${pos.sl.toFixed(1)}`
+      });
+    }
     const chartEl = document.getElementById('chart');
     const xBtn = document.createElement('div');
     xBtn.id = 'posLineX';
     xBtn.className = 'pos-line-x';
     xBtn.title = 'Close position';
     xBtn.textContent = '✕';
-    xBtn.onclick = (e) => {
-      e.stopPropagation();
-      openCloseModal(pos.id);
-    };
+    xBtn.onclick = (e) => { e.stopPropagation(); openCloseModal(pos.id); };
     chartEl.appendChild(xBtn);
-    // Align the X vertically with the entry price on the chart
     const y = state.candleSeries.priceToCoordinate(pos.entry);
-    if (y !== null && y !== undefined) {
-      xBtn.style.top = y + 'px';
-    } else {
-      xBtn.style.top = '50%';
-    }
+    xBtn.style.top = (y != null ? y : 50) + 'px';
   }
 }
 
@@ -1099,6 +1102,16 @@ const guideSteps = [
     cat: 'Click the ✕ on the position line to open Market Close.'
   },
   {
+    title: 'Sprint 3: Set TP/SL from Positions',
+    text: 'In the Positions table, click the pencil on your position. The Edit TP/SL modal opens. Enter a TP price and an SL price, then Save. The TP and SL appear as lines on the chart for this asset.',
+    target: '.bottom',
+    preview: '✎ TP/SL',
+    require: 'posTpsl',
+    precondition: 'hasPosition',
+    cat: 'Click the pencil, set TP and SL, Save. Watch the chart.',
+    onEnter: 'unlockPositions'
+  },
+  {
     title: 'Sprint 3: TP / SL + Support / Resistance',
     text: 'The chart shows a hypothetical support (green) and resistance (red). Place TP at or just under resistance, and SL just beneath support. That way the stop is below the level that should hold, and the target is where price has stalled before. A 1:3 RR (risk 1 to earn 3) is a solid setup.',
     target: '#tpslBox',
@@ -1291,6 +1304,9 @@ function checkStepProgress() {
     ok = currentMarket === 'HYPE-USDC';
   } else if (s.require === 'hypeLong') {
     ok = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long') && orderType === 'market';
+  } else if (s.require === 'posTpsl') {
+    const pos = state.positions.find(p => p.market === currentMarket);
+    ok = pos && pos.tp > 0 && pos.sl > 0;
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
