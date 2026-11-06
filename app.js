@@ -483,14 +483,27 @@ function editPositionTpsl(id) {
 function savePositionTpsl() {
   const p = state.positions.find(x => x.id === window.editingTpslId);
   if (!p) return;
-  const tp = document.getElementById('tpslModalTp').value;
-  const sl = document.getElementById('tpslModalSl').value;
-  p.tp = tp ? parseFloat(tp) : null;
-  p.sl = sl ? parseFloat(sl) : null;
+  const tp = parseFloat(document.getElementById('tpslModalTp').value);
+  const sl = parseFloat(document.getElementById('tpslModalSl').value);
+  const entry = p.entry;
+  // Long: TP above entry, SL below. Short: TP below entry, SL above.
+  if (tp && ((p.side === 'long' && tp <= entry) || (p.side === 'short' && tp >= entry))) {
+    showToast(`TP must be ${p.side === 'long' ? 'above' : 'below'} entry (${entry.toFixed(1)})`);
+    hypurrSay(`For a ${p.side}, take profit goes ${p.side === 'long' ? 'above' : 'below'} your entry.`, 3000);
+    return;
+  }
+  if (sl && ((p.side === 'long' && sl >= entry) || (p.side === 'short' && sl <= entry))) {
+    showToast(`SL must be ${p.side === 'long' ? 'below' : 'above'} entry (${entry.toFixed(1)})`);
+    hypurrSay(`For a ${p.side}, stop loss goes ${p.side === 'long' ? 'below' : 'above'} your entry.`, 3000);
+    return;
+  }
+  p.tp = tp || null;
+  p.sl = sl || null;
   document.getElementById('tpslModal').style.display = 'none';
   updateUI();
   showToast('TP/SL updated');
   hypurrSay('TP/SL updated on the position.', 2000);
+  if (typeof checkStepProgress === 'function') checkStepProgress();
 }
 window.editPositionTpsl = editPositionTpsl;
 function confirmMarketClose() {
