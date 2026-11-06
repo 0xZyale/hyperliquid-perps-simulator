@@ -797,7 +797,13 @@ function bindEvents() {
     }
   };
   document.getElementById('guideSkip').onclick = () => {
-    // Skip ends the current sprint so there is a break, then Resume continues
+    // Advance past the current sprint so Resume continues, then close for a break
+    const endIdx = guideSteps.findIndex((s, i) => i > state.guideStep && s.endSprint);
+    if (endIdx !== -1) {
+      state.guideStep = endIdx;
+    } else {
+      state.guideStep = Math.min(state.guideStep + 1, guideSteps.length - 1);
+    }
     closeGuide();
     showToast('Sprint skipped. Click Resume Guide when ready.');
     const btn = document.getElementById('guideBtn');
