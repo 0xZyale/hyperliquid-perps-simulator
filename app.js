@@ -1582,12 +1582,25 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Hypurr: place one guide-length below the guide, unless the user has dragged it
+  // Hypurr: keep it out of the focused area (guide + target) on every step
   if (!hypurrUserMoved) {
     const guideH = 220;
     hypurr.classList.add('with-guide');
-    hypurr.style.left = Math.max(20, leftPos) + 'px';
-    hypurr.style.top = Math.min(topPos + guideH + 24, window.innerHeight - 140) + 'px';
+    // Prefer bottom-right corner, unless the guide or target is there
+    let hx = window.innerWidth - 280;
+    let hy = window.innerHeight - 130;
+    const guideRect = { left: leftPos, top: topPos, right: leftPos + 360, bottom: topPos + guideH };
+    const overlaps = (x, y) => x < guideRect.right + 20 && x + 260 > guideRect.left && y < guideRect.bottom + 20 && y + 100 > guideRect.top;
+    if (overlaps(hx, hy)) {
+      hx = 20;
+      hy = window.innerHeight - 130;
+    }
+    if (overlaps(hx, hy)) {
+      hx = window.innerWidth - 280;
+      hy = 80;
+    }
+    hypurr.style.left = Math.max(20, hx) + 'px';
+    hypurr.style.top = Math.max(70, Math.min(hy, window.innerHeight - 130)) + 'px';
     hypurr.style.right = 'auto';
     hypurr.style.bottom = 'auto';
   }
