@@ -14,12 +14,12 @@ const state = {
 };
 
 const markets = {
-  'BTC-USDC': { price: 80800, precision: 1, binance: 'BTCUSDT' },
-  'ETH-USDC': { price: 3200, precision: 2, binance: 'ETHUSDT' },
-  'XRP-USDC': { price: 2.45, precision: 4, binance: 'XRPUSDT' },
-  'HYPE-USDC': { price: 28.5, precision: 3, binance: null },
+  'BTC-USDC': { price: 92900, precision: 1, binance: 'BTCUSDT' },
+  'ETH-USDC': { price: 3080, precision: 2, binance: 'ETHUSDT' },
+  'XRP-USDC': { price: 2.17, precision: 4, binance: 'XRPUSDT' },
+  'HYPE-USDC': { price: 78, precision: 2, binance: 'HYPEUSDT' },
   'ZEC-USDC': { price: 48, precision: 2, binance: 'ZECUSDT' },
-  'SOL-USDC': { price: 185, precision: 2, binance: 'SOLUSDT' }
+  'SOL-USDC': { price: 141, precision: 2, binance: 'SOLUSDT' }
 };
 let currentMarket = 'BTC-USDC';
 let limitOrders = []; // {id, market, side, price, size}
@@ -767,7 +767,6 @@ function bindEvents() {
     if (m) {
       state.price = m.price;
       loadCandles(+document.querySelector('.tf-btn.active')?.dataset.tf || 60);
-      // Keep the margin % and repopulate size for the new price
       const pct = +document.getElementById('pctSlider').value / 100;
       if (pct > 0 && state.price > 0) {
         const maxNotional = state.balance * state.leverage;
@@ -777,6 +776,7 @@ function bindEvents() {
       updateUI();
       updateBook();
       refreshLimitLines();
+      fetchPythPrice();
     }
   };
   document.getElementById('orderTypeMarket').onclick = () => {
@@ -1510,30 +1510,20 @@ const PYTH_BTC = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a41
 let pythTimer = null;
 
 async function fetchPythPrice() {
-  // Try Pyth Hermes first; it requires an API key since Aug 2026, so fall back to Binance public ticker
+  const m = markets[currentMarket];
+  const symbol = m?.binance || 'BTCUSDT';
   try {
-    const url = `https://hermes.pyth.network/v2/updates/price/latest?ids[]=${PYTH_BTC}`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      const parsed = data.parsed && data.parsed[0];
-      if (parsed && parsed.price) {
-        const price = Number(parsed.price.price) * Math.pow(10, parsed.price.expo);
-        if (price > 0) { applyLivePrice(price); return; }
-      }
-    }
-  } catch (err) { /* fall through */ }
-  try {
-    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
     if (!res.ok) throw new Error('binance');
     const data = await res.json();
     const price = Number(data.price);
-    if (price > 0) { applyLivePrice(price); return; }
+    if (price > 0) {
+      if (m) m.price = price;
+      applyLivePrice(price);
+      return;
+    }
   } catch (err) {
     console.warn('Live price failed', err);
-    showToast('Live price unavailable — using simulated');
-    document.getElementById('pythMode').checked = false;
-    stopPyth();
   }
 }
 function applyLivePrice(price) {
