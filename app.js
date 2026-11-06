@@ -467,6 +467,7 @@ function openCloseModal(id, type = 'market') {
   document.getElementById('closePctSlider').value = 100;
   document.getElementById('closePctVal').textContent = '100%';
   document.getElementById('closeModal').style.display = 'flex';
+  if (typeof showGuideStep === 'function' && document.getElementById('guideOverlay').classList.contains('active')) showGuideStep();
   document.querySelector('#closeModal h3').textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' Close';
   window.closeType = type;
 }
@@ -477,6 +478,7 @@ function editPositionTpsl(id) {
   document.getElementById('tpslModalTp').value = p.tp || '';
   document.getElementById('tpslModalSl').value = p.sl || '';
   document.getElementById('tpslModal').style.display = 'flex';
+  if (typeof showGuideStep === 'function' && document.getElementById('guideOverlay').classList.contains('active')) showGuideStep();
 }
 function savePositionTpsl() {
   const p = state.positions.find(x => x.id === window.editingTpslId);
@@ -1582,22 +1584,27 @@ function showGuideStep() {
   guideBox.style.right = 'auto';
   guideBox.style.bottom = 'auto';
 
-  // Hypurr: keep it out of the focused area (guide + target) on every step
+  // Hypurr: keep it out of the focused area (guide, target, and any open modal)
   if (!hypurrUserMoved) {
     const guideH = 220;
     hypurr.classList.add('with-guide');
-    // Prefer bottom-right corner, unless the guide or target is there
-    let hx = window.innerWidth - 280;
-    let hy = window.innerHeight - 130;
-    const guideRect = { left: leftPos, top: topPos, right: leftPos + 360, bottom: topPos + guideH };
-    const overlaps = (x, y) => x < guideRect.right + 20 && x + 260 > guideRect.left && y < guideRect.bottom + 20 && y + 100 > guideRect.top;
-    if (overlaps(hx, hy)) {
-      hx = 20;
-      hy = window.innerHeight - 130;
-    }
-    if (overlaps(hx, hy)) {
-      hx = window.innerWidth - 280;
-      hy = 80;
+    const blocked = [{ left: leftPos, top: topPos, right: leftPos + 360, bottom: topPos + guideH }];
+    document.querySelectorAll('.modal').forEach(m => {
+      if (m.style.display === 'flex') {
+        const r = m.getBoundingClientRect();
+        blocked.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+      }
+    });
+    const hits = (x, y) => blocked.some(b => x < b.right + 20 && x + 260 > b.left && y < b.bottom + 20 && y + 100 > b.top);
+    const spots = [
+      [window.innerWidth - 280, window.innerHeight - 130],
+      [20, window.innerHeight - 130],
+      [window.innerWidth - 280, 80],
+      [20, 80]
+    ];
+    let hx = spots[0][0], hy = spots[0][1];
+    for (const [x, y] of spots) {
+      if (!hits(x, y)) { hx = x; hy = y; break; }
     }
     hypurr.style.left = Math.max(20, hx) + 'px';
     hypurr.style.top = Math.max(70, Math.min(hy, window.innerHeight - 130)) + 'px';
