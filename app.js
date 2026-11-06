@@ -455,11 +455,21 @@ function openCloseModal(id, type = 'market') {
 function editPositionTpsl(id) {
   const p = state.positions.find(x => x.id === id);
   if (!p) return;
-  const tp = prompt('Take Profit price (blank to clear):', p.tp || '');
-  const sl = prompt('Stop Loss price (blank to clear):', p.sl || '');
-  if (tp !== null) p.tp = tp ? parseFloat(tp) : null;
-  if (sl !== null) p.sl = sl ? parseFloat(sl) : null;
+  window.editingTpslId = id;
+  document.getElementById('tpslModalTp').value = p.tp || '';
+  document.getElementById('tpslModalSl').value = p.sl || '';
+  document.getElementById('tpslModal').style.display = 'flex';
+}
+function savePositionTpsl() {
+  const p = state.positions.find(x => x.id === window.editingTpslId);
+  if (!p) return;
+  const tp = document.getElementById('tpslModalTp').value;
+  const sl = document.getElementById('tpslModalSl').value;
+  p.tp = tp ? parseFloat(tp) : null;
+  p.sl = sl ? parseFloat(sl) : null;
+  document.getElementById('tpslModal').style.display = 'none';
   updateUI();
+  showToast('TP/SL updated');
   hypurrSay('TP/SL updated on the position.', 2000);
 }
 window.editPositionTpsl = editPositionTpsl;
@@ -681,6 +691,10 @@ function bindEvents() {
       showToast(tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1) + ' (simulated)');
     };
   });
+  document.getElementById('tpslModalSave').onclick = savePositionTpsl;
+  document.getElementById('tpslModalX').onclick = () => {
+    document.getElementById('tpslModal').style.display = 'none';
+  };
   document.getElementById('guideBtn').onclick = startGuide;
   document.getElementById('guideNext').onclick = nextGuide;
   document.getElementById('guideBack').onclick = prevGuide;
