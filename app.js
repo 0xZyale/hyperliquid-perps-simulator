@@ -376,34 +376,35 @@ function cancelLimit(id) {
 }
 function drawSrScenario() {
   if (!state.candleSeries) return;
-  const base = state.price;
-  const support = base * 0.94;
-  const resistance = base * 1.06;
-  // Thick zone boxes (like the reference chart)
-  for (let i = -3; i <= 3; i++) {
+  const data = state.candleSeries.data();
+  const highs = data.map(c => c.high);
+  const lows = data.map(c => c.low);
+  const hi = Math.max(...highs);
+  const lo = Math.min(...lows);
+  const mid = (hi + lo) / 2;
+  // Place zones inside the visible candle range so both show without dragging
+  const support = lo + (mid - lo) * 0.25;
+  const resistance = hi - (hi - mid) * 0.25;
+  for (let i = -2; i <= 2; i++) {
+    const band = (hi - lo) * 0.008;
     state.candleSeries.createPriceLine({
-      price: support * (1 + i * 0.002),
-      color: i === 0 ? '#66bb6a' : 'rgba(102,187,106,0.35)',
-      lineWidth: i === 0 ? 3 : 8,
+      price: support + i * band,
+      color: i === 0 ? '#66bb6a' : 'rgba(102,187,106,0.4)',
+      lineWidth: i === 0 ? 3 : 6,
       lineStyle: LightweightCharts.LineStyle.Solid,
       axisLabelVisible: i === 0,
       title: i === 0 ? 'SUPPORT — buy' : ''
     });
     state.candleSeries.createPriceLine({
-      price: resistance * (1 + i * 0.002),
-      color: i === 0 ? '#ef5350' : 'rgba(239,83,80,0.35)',
-      lineWidth: i === 0 ? 3 : 8,
+      price: resistance + i * band,
+      color: i === 0 ? '#ef5350' : 'rgba(239,83,80,0.4)',
+      lineWidth: i === 0 ? 3 : 6,
       lineStyle: LightweightCharts.LineStyle.Solid,
       axisLabelVisible: i === 0,
       title: i === 0 ? 'RESISTANCE — sell' : ''
     });
   }
-  // Zoom out so both zones are on screen
-  try {
-    const span = base * 0.12;
-    state.chart.priceScale('right').setVisibleRange?.({ from: base - span, to: base + span });
-  } catch (e) { /* ignore */ }
-  hypurrSay('Green box = support (buy). Red box = resistance (sell). Drag the chart if a zone is off-screen.', 0);
+  hypurrSay('Green box = support (buy). Red box = resistance (sell). Both are on screen.', 0);
   return { support, resistance };
 }
 function placeOrder() {
@@ -613,8 +614,16 @@ function bindEvents() {
     hypurrSay('Cross mode: whole balance backs every position. Bigger risk, bigger capacity.', 2500);
   };
 
-  document.getElementById('longBtn').onclick = () => { state.side = 'long'; };
-  document.getElementById('shortBtn').onclick = () => { state.side = 'short'; };
+  document.getElementById('longBtn').onclick = () => {
+    state.side = 'long';
+    document.getElementById('longBtn').classList.add('selected');
+    document.getElementById('shortBtn').classList.remove('selected');
+  };
+  document.getElementById('shortBtn').onclick = () => {
+    state.side = 'short';
+    document.getElementById('shortBtn').classList.add('selected');
+    document.getElementById('longBtn').classList.remove('selected');
+  };
 
   document.getElementById('sizeInput').oninput = calculateOrder;
   document.getElementById('pctSlider').oninput = (e) => {
@@ -816,6 +825,11 @@ function bindEvents() {
       updateBook();
       refreshLimitLines();
       fetchPythPrice();
+      // Clear stale TP/SL so BTC values don't linger on the new market
+      document.getElementById('tpPrice').value = '';
+      document.getElementById('slPrice').value = '';
+      document.getElementById('tpPctInput').value = '';
+      document.getElementById('slPctInput').value = '';
       if (typeof checkStepProgress === 'function') checkStepProgress();
     }
   };
@@ -1116,12 +1130,13 @@ const guideSteps = [
   },
   {
     title: 'Sprint 3: Set TP/SL from Positions',
-    text: 'In the Positions table, click the pencil on your position. The Edit TP/SL modal opens. Enter a TP price and an SL price, then Save. The TP and SL appear as lines on the chart for this asset.',
+    text: 'In the Positions table, click the pencil ✎ on your position. Enter TP and SL, then Save. The lines appear on the chart.',
     target: '.bottom',
-    preview: '✎ TP/SL',
+    preview: 'pencil',
+    previewHtml: true,
     require: 'posTpsl',
     precondition: 'hasPosition',
-    cat: 'Click the pencil, set TP and SL, Save. Watch the chart.',
+    cat: 'Click the pencil ✎, set TP and SL, Save.',
     onEnter: 'unlockPositions'
   },
   {
@@ -1411,6 +1426,12 @@ function showGuideStep() {
       `;
       preview.appendChild(wrap);
       preview.appendChild(document.createTextNode(' ← look for this'));
+    } else if (s.previewHtml && s.preview === 'pencil') {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; align-items:center; gap:6px; background:#12161c; padding:6px 10px; border-radius:6px; border:1px solid #21262d;';
+      wrap.innerHTML = `<span style="color:#00d4b1; font-size:16px;">✎</span><span style="font-size:11px; color:#8b949e;">— / —</span>`;
+      preview.appendChild(wrap);
+      preview.appendChild(document.createTextNode(' ← click the pencil'));
     } else {
       const btn = document.createElement('button');
       btn.className = 'btn preview-btn';
