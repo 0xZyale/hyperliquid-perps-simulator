@@ -1040,11 +1040,12 @@ const guideSteps = [
   },
   {
     title: 'Sprint 2: Place the Trade',
-    text: 'Click Place Order. This opens the position you’ll manage next. (You already have margin from the bridge.)',
+    text: 'Make sure Type is Market (not Limit). Then click Place Order. This opens the position you’ll manage next. (You already have margin from the bridge.)',
     target: '#placeOrder',
     preview: 'Place Order',
     require: 'order',
-    cat: 'Place the order now.'
+    cat: 'Confirm Market, then Place Order.',
+    onEnter: 'forceMarket'
   },
   {
     title: 'Order form done — nice work',
@@ -1124,12 +1125,13 @@ const guideSteps = [
   },
   {
     title: 'Sprint 4a: Short ETH',
-    text: 'Subquest 2. ETH is selected. Click Sell / Short, set a size, and Place Order. Next unlocks when the ETH short is open.',
+    text: 'Subquest 2. ETH is selected. Confirm Type is Market, click Sell / Short, set a size, and Place Order. Next unlocks when the ETH short is open.',
     target: '#shortBtn',
     preview: 'Sell / Short',
     require: 'ethShort',
-    cat: 'Click Sell / Short and Place Order.',
-    noBlackout: true
+    cat: 'Market order. Click Sell / Short and Place Order.',
+    noBlackout: true,
+    onEnter: 'forceMarket'
   },
   {
     title: 'Sprint 4b: Find HYPE',
@@ -1142,12 +1144,13 @@ const guideSteps = [
   },
   {
     title: 'Sprint 4b: Long HYPE',
-    text: 'Subquest 2. HYPE is selected. Click Buy / Long, set a size, and Place Order. Next unlocks when the HYPE long is open.',
+    text: 'Subquest 2. HYPE is selected. Confirm Type is Market, click Buy / Long, set a size, and Place Order. Next unlocks when the HYPE long is open.',
     target: '#longBtn',
     preview: 'Buy / Long',
     require: 'hypeLong',
-    cat: 'Click Buy / Long and Place Order.',
-    noBlackout: true
+    cat: 'Market order. Click Buy / Long and Place Order.',
+    noBlackout: true,
+    onEnter: 'forceMarket'
   },
   {
     title: 'Sprint 5: Support & Resistance',
@@ -1245,7 +1248,7 @@ function checkStepProgress() {
   } else if (s.require === 'mode') {
     ok = state.isolated !== modeStart;
   } else if (s.require === 'order') {
-    ok = orderPlaced || state.positions.length > 0;
+    ok = (orderPlaced || state.positions.length > 0) && orderType === 'market';
   } else if (s.require === 'partial') {
     ok = partialDone;
   } else if (s.require === 'full') {
@@ -1259,11 +1262,11 @@ function checkStepProgress() {
   } else if (s.require === 'selectEth') {
     ok = currentMarket === 'ETH-USDC';
   } else if (s.require === 'ethShort') {
-    ok = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short');
+    ok = state.positions.some(p => p.market === 'ETH-USDC' && p.side === 'short') && orderType === 'market';
   } else if (s.require === 'selectHype') {
     ok = currentMarket === 'HYPE-USDC';
   } else if (s.require === 'hypeLong') {
-    ok = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long');
+    ok = state.positions.some(p => p.market === 'HYPE-USDC' && p.side === 'long') && orderType === 'market';
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -1284,7 +1287,7 @@ function showGuideStep() {
   // Precondition gate: if not met, redirect to opening a position first
   if (s && !checkPrecondition(s)) {
     document.getElementById('guideTitle').textContent = 'Open a position first';
-    document.getElementById('guideText').textContent = 'This step needs an open perp. Set a size and click Place Order. Once a position is in the table, this step continues.';
+    document.getElementById('guideText').textContent = 'This step needs an open perp. Set Type to Market, set a size, and click Place Order. Once a position is in the table, this step continues.';
     document.getElementById('guidePreview').innerHTML = '<button class="btn preview-btn">Place Order</button> ← look for this';
     hypurrSay('No open position. Place one first, then we continue.');
     const nextBtn = document.getElementById('guideNext');
