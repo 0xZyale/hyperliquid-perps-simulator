@@ -797,17 +797,18 @@ function bindEvents() {
     }
   };
   document.getElementById('guideSkip').onclick = () => {
-    // Advance past the current sprint so Resume continues, then close for a break
-    const endIdx = guideSteps.findIndex((s, i) => i > state.guideStep && s.endSprint);
-    if (endIdx !== -1) {
-      state.guideStep = endIdx;
-    } else {
-      state.guideStep = Math.min(state.guideStep + 1, guideSteps.length - 1);
+    // Skip jumps ahead and keeps the guide open. Only a completed sprint closes it.
+    state.guideStep = Math.min(state.guideStep + 1, guideSteps.length - 1);
+    // Unlock positions once we are past the positions sprint
+    if (state.guideStep >= 8) {
+      const seal = document.getElementById('positionsSeal');
+      if (seal) seal.classList.add('unlocked');
     }
-    closeGuide();
-    showToast('Sprint skipped. Click Resume Guide when ready.');
-    const btn = document.getElementById('guideBtn');
-    if (btn) btn.textContent = 'Resume Guide';
+    if (state.guideStep >= 3 && state.balance < 1000) {
+      state.balance = 1000;
+      updateUI();
+    }
+    showGuideStep();
   };
   document.getElementById('guideJump').onchange = (e) => {
     const v = e.target.value;
