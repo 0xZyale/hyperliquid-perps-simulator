@@ -486,13 +486,18 @@ function confirmMarketClose() {
   const pct = +document.getElementById('closePctSlider').value / 100;
   const p = state.positions.find(x => x.id === closingPositionId);
   if (!p) return;
+  const onPartialStep = document.getElementById('guideOverlay').classList.contains('active') && guideSteps[state.guideStep]?.require === 'partial';
+  if (onPartialStep && pct >= 0.99) {
+    showToast('Guide wants you to close a partial position — drag the slider below 100%.');
+    hypurrSay('This step is a partial close. Move the slider under 100%, then confirm.', 3000);
+    return;
+  }
   if (pct >= 0.99) {
     closePosition(closingPositionId);
   } else {
     closePartial(closingPositionId, pct);
   }
   document.getElementById('closeModal').style.display = 'none';
-  // Keep a notification visible for at least 5s
   const center = document.getElementById('notifCenter');
   const item = document.createElement('div');
   item.className = 'notif-item';
