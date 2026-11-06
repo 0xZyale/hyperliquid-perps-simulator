@@ -751,15 +751,11 @@ function bindEvents() {
     }
   };
   document.getElementById('guideSkip').onclick = () => {
-    // Skip jumps to the next sprint start
-    const jumps = [1, 3, 3, 8, 8, 8, 8, 8, 11, 11, 11, 11];
-    const next = jumps[state.guideStep] ?? state.guideStep + 1;
-    if (next >= guideSteps.length) {
-      closeGuide();
-      return;
-    }
-    state.guideStep = next;
-    showGuideStep();
+    // Skip ends the current sprint so there is a break, then Resume continues
+    closeGuide();
+    showToast('Sprint skipped. Click Resume Guide when ready.');
+    const btn = document.getElementById('guideBtn');
+    if (btn) btn.textContent = 'Resume Guide';
   };
   document.getElementById('guideJump').onchange = (e) => {
     const v = e.target.value;
@@ -1233,14 +1229,24 @@ let guidePaused = false;
 let hypurrUserMoved = false;
 let closingPositionId = null;
 
+let guideBegun = false;
 function startGuide() {
-  state.guideStep = 0;
+  if (!guideBegun) {
+    state.guideStep = 0;
+    guideBegun = true;
+  }
+  // If resuming after a finished sprint, advance to the next one
+  const s = guideSteps[state.guideStep];
+  if (s && s.endSprint && !document.getElementById('guideOverlay').classList.contains('active')) {
+    state.guideStep = Math.min(state.guideStep + 1, guideSteps.length - 1);
+  }
   leverageStart = +document.getElementById('leverageSlider').value;
   modeStart = state.isolated;
   partialDone = false;
   fullDone = false;
   orderPlaced = state.positions.length > 0;
   document.getElementById('guideOverlay').classList.add('active');
+  document.getElementById('guideBtn').textContent = 'Resume Guide';
   showGuideStep();
 }
 function closeGuide() {
@@ -1264,6 +1270,7 @@ function nextGuide() {
   if (s && s.endSprint) {
     closeGuide();
     showToast(s.cat || 'Sprint complete. Take a break.');
+    document.getElementById('guideBtn').textContent = 'Resume Guide';
     return;
   }
   if (state.guideStep >= guideSteps.length - 1) {
