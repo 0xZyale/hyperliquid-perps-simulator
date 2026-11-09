@@ -477,8 +477,32 @@ function editPositionTpsl(id) {
   window.editingTpslId = id;
   document.getElementById('tpslModalTp').value = p.tp || '';
   document.getElementById('tpslModalSl').value = p.sl || '';
+  syncModalTpslPct();
   document.getElementById('tpslModal').style.display = 'flex';
   if (typeof showGuideStep === 'function' && document.getElementById('guideOverlay').classList.contains('active')) showGuideStep();
+}
+function syncModalTpslPct() {
+  const p = state.positions.find(x => x.id === window.editingTpslId);
+  if (!p) return;
+  const tp = parseFloat(document.getElementById('tpslModalTp').value);
+  const sl = parseFloat(document.getElementById('tpslModalSl').value);
+  const entry = p.entry;
+  if (tp > 0 && entry > 0 && document.activeElement.id !== 'tpslModalTpPct') {
+    document.getElementById('tpslModalTpPct').value = (((tp - entry) / entry) * 100 * p.leverage).toFixed(1);
+  }
+  if (sl > 0 && entry > 0 && document.activeElement.id !== 'tpslModalSlPct') {
+    document.getElementById('tpslModalSlPct').value = (((sl - entry) / entry) * 100 * p.leverage).toFixed(1);
+  }
+}
+function syncModalTpslPrice(which) {
+  const p = state.positions.find(x => x.id === window.editingTpslId);
+  if (!p) return;
+  const pctEl = which === 'tp' ? 'tpslModalTpPct' : 'tpslModalSlPct';
+  const priceEl = which === 'tp' ? 'tpslModalTp' : 'tpslModalSl';
+  const pct = parseFloat(document.getElementById(pctEl).value);
+  if (isNaN(pct) || p.entry <= 0) return;
+  const pricePct = pct / p.leverage;
+  document.getElementById(priceEl).value = (p.entry * (1 + pricePct / 100)).toFixed(1);
 }
 function savePositionTpsl() {
   const p = state.positions.find(x => x.id === window.editingTpslId);
@@ -761,6 +785,10 @@ function bindEvents() {
       showToast(tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1) + ' (simulated)');
     };
   });
+  document.getElementById('tpslModalTp').oninput = syncModalTpslPct;
+  document.getElementById('tpslModalSl').oninput = syncModalTpslPct;
+  document.getElementById('tpslModalTpPct').oninput = () => syncModalTpslPrice('tp');
+  document.getElementById('tpslModalSlPct').oninput = () => syncModalTpslPrice('sl');
   document.getElementById('tpslModalSave').onclick = savePositionTpsl;
   document.getElementById('tpslModalX').onclick = () => {
     document.getElementById('tpslModal').style.display = 'none';
