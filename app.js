@@ -1219,6 +1219,7 @@ const guideSteps = [
     text: 'In the Positions table, use the close links: Limit, Market, Trailing, or Reverse (same as Hyperliquid). Click Market for a market close popup. Drag the size slider and confirm. Next unlocks after you close.',
     target: '.bottom',
     preview: 'Market',
+    previewLink: true,
     require: 'partial',
     precondition: 'hasPosition',
     cat: 'Use Limit / Market / Trailing / Reverse to close.',
@@ -1374,6 +1375,7 @@ const guideSteps = [
     text: 'Now market close the cross HYPE long we populated. It is losing. The whole Available to Trade was collateral — if the loss had eaten the margin required to hold it, the trade would have been closed for you. Click Give hint to highlight the row.',
     target: '.bottom',
     preview: 'Market',
+    previewLink: true,
     require: 'closedCross',
     hintTarget: 'cross-loss',
     cat: 'Market close the cross HYPE long we populated. Whole balance was collateral.',
@@ -1574,10 +1576,17 @@ function showGuideStep() {
       preview.appendChild(wrap);
       preview.appendChild(document.createTextNode(' ← click the pencil'));
     } else {
-      const btn = document.createElement('button');
-      btn.className = 'btn preview-btn';
-      btn.textContent = s.preview;
-      preview.appendChild(btn);
+      if (s.previewLink) {
+        const link = document.createElement('span');
+        link.style.cssText = 'color:#00d4b1; font-size:12px; text-decoration:underline;';
+        link.textContent = s.preview;
+        preview.appendChild(link);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'btn preview-btn';
+        btn.textContent = s.preview;
+        preview.appendChild(btn);
+      }
       preview.appendChild(document.createTextNode(' ← look for this'));
     }
   }
