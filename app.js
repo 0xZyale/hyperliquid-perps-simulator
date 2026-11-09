@@ -1318,6 +1318,13 @@ const guideSteps = [
     onEnter: 'forceMarket'
   },
   {
+    title: 'Sprint 4 done',
+    text: 'ETH short and HYPE long are open. Take a break. Resume when you are ready for support and resistance.',
+    target: null,
+    cat: 'Sprint 4 complete. Resume for Sprint 5.',
+    endSprint: true
+  },
+  {
     title: 'Sprint 5: Support & Resistance',
     text: 'Green box = support (buy). Red box = resistance (sell). Drag the chart if a zone is off-screen.',
     target: '#chart',
@@ -1328,33 +1335,33 @@ const guideSteps = [
   },
   {
     title: 'Place with TP / SL',
-    text: 'Place any order (Market or Limit) with TP and SL on. Check the TP/SL box, set both, then Place Order.',
+    text: 'Place a new order with Take Profit / Stop Loss on. Check the box, set both TP and SL, then Place Order. Next unlocks only after the new position is open.',
     target: '#tpslBox',
-    preview: 'TP / SL',
+    preview: 'Take Profit / Stop Loss',
     require: 'orderWithTpsl',
-    cat: 'Any order type. TP and SL both set, then Place Order.',
+    cat: 'Check Take Profit / Stop Loss, set both, Place Order.',
     onEnter: 'tpslDemo',
     noBlackout: true
   },
   {
     title: 'Cross vs Isolated: the winner',
-    text: 'Congrats — the isolated long went according to plan. Market close it from the table. Available to Trade goes up by the margin plus profit. The rest of your balance never backed this trade. Click Give hint if you are not sure which row.',
+    text: 'We populated two demo trades: an isolated HYPE long that is winning, and a cross HYPE long that is losing. Market close the isolated HYPE long (the winning one). Available to Trade goes up. Your other balance never backed it. Click Give hint to highlight the row.',
     target: '.bottom',
-    preview: 'Market close',
+    preview: 'Market',
     require: 'closedIsolated',
     hintTarget: 'iso-win',
-    cat: 'Market close the isolated winner. Available margin rises.',
+    cat: 'Market close the isolated HYPE long we populated. Available margin rises.',
     onEnter: 'seedModes',
     noBlackout: true
   },
   {
     title: 'Cross vs Isolated: the loser',
-    text: 'Now market close the cross long. It is losing. The whole Available to Trade was collateral — if the loss had eaten the margin required to hold it, the trade would have been closed for you. Click Give hint to highlight the row.',
+    text: 'Now market close the cross HYPE long we populated. It is losing. The whole Available to Trade was collateral — if the loss had eaten the margin required to hold it, the trade would have been closed for you. Click Give hint to highlight the row.',
     target: '.bottom',
-    preview: 'Market close',
+    preview: 'Market',
     require: 'closedCross',
     hintTarget: 'cross-loss',
-    cat: 'Market close the cross loser. Whole balance was collateral.',
+    cat: 'Market close the cross HYPE long we populated. Whole balance was collateral.',
     noBlackout: true
   },
   {
@@ -1480,7 +1487,8 @@ function checkStepProgress() {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
     const on = document.getElementById('tpslToggle').checked;
-    ok = on && tp > 0 && sl > 0 && (orderPlaced || state.positions.length > 0);
+    const before = window.tpslPosCount || 0;
+    ok = on && tp > 0 && sl > 0 && state.positions.length > before;
   } else if (s.require === 'closedIsolated') {
     ok = !state.positions.some(p => p.id === 'iso-win');
   } else if (s.require === 'closedCross') {
