@@ -654,6 +654,7 @@ function bindEvents() {
     hypurrSay('Cross mode: whole balance backs every position. Bigger risk, bigger capacity.', 2500);
   };
 
+  document.getElementById('longBtn').classList.add('selected');
   document.getElementById('longBtn').onclick = () => {
     state.side = 'long';
     document.getElementById('longBtn').classList.add('selected');

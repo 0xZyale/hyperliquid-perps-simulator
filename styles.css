@@ -278,10 +278,10 @@ input[type="number"], input[type="text"], select {
 .leverage-popover input[type="range"] { width: 100%; }
 .side-btns { display: flex; gap: 8px; margin: 8px 0; }
 .side-btns button { flex: 1; padding: 10px; font-size: 14px; font-weight: 600; }
-.side-btns .long { background: var(--buy); color: #000; }
-.side-btns .short { background: var(--sell); color: #fff; }
-.side-btns .long.selected { outline: 3px solid #fff; box-shadow: 0 0 12px #00c853; }
-.side-btns .short.selected { outline: 3px solid #fff; box-shadow: 0 0 12px #ff5252; }
+.side-btns .long { background: #1a3a2a; color: #4a7a5a; }
+.side-btns .short { background: #3a1a1a; color: #7a4a4a; }
+.side-btns .long.selected { background: var(--buy); color: #000; outline: 3px solid #fff; box-shadow: 0 0 16px #00c853; }
+.side-btns .short.selected { background: var(--sell); color: #fff; outline: 3px solid #fff; box-shadow: 0 0 16px #ff5252; }
 .info-box { background: var(--panel-2); padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px; }
 .info-box div { display: flex; justify-content: space-between; margin: 2px 0; }
 
