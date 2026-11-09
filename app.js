@@ -1384,9 +1384,9 @@ const guideSteps = [
   },
   {
     title: 'Done',
-    text: 'Sprint 3 is done. You finished Bridge → Order form → Position management. Same flow on the real Hyperliquid app. Jump to… anytime to revisit.',
+    text: 'Sprint 5 is done. You finished Bridge → Order form → Positions → ETH/HYPE → Support & Resistance → Cross vs Isolated. Same flow on the real Hyperliquid app. Jump to… anytime to revisit.',
     target: null,
-    cat: 'Sprint 3 complete. Minimize losses, maximize gains.',
+    cat: 'Sprint 5 complete. Minimize losses, maximize gains.',
     endSprint: true
   }
 ];
