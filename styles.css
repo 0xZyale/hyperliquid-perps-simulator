@@ -443,7 +443,7 @@ input[type="number"], input[type="text"], select {
   transform: scale(0.95);
 }
 .guide-box p { margin-bottom: 12px; line-height: 1.45; color: var(--text); font-size: 13px; }
-.guide-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.guide-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
 .guide-actions .btn { pointer-events: auto; }
 
 .banner {
