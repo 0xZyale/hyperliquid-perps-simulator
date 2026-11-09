@@ -1364,6 +1364,7 @@ const guideSteps = [
     text: 'We populated two demo trades: an isolated HYPE long that is winning, and a cross HYPE long that is losing. Market close the isolated HYPE long (the winning one). Available to Trade goes up. Your other balance never backed it. Click Give hint to highlight the row.',
     target: '.bottom',
     preview: 'Market',
+    previewLink: true,
     require: 'closedIsolated',
     hintTarget: 'iso-win',
     cat: 'Market close the isolated HYPE long we populated. Available margin rises.',
