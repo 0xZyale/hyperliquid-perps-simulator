@@ -207,7 +207,7 @@ function renderPositions() {
       <td>${state.price.toFixed(1)}</td>
       <td class="${cls}">${pnl.toFixed(2)} (${roe.toFixed(1)}%)</td>
       <td>${p.liq.toFixed(1)}</td>
-      <td>${p.margin.toFixed(2)}</td>
+      <td>${p.margin.toFixed(2)} (${p.isolated ? 'isolated' : 'cross'})</td>
       <td>
         <span class="close-types">
           <button class="close-link" onclick="openCloseModal('${p.id}','limit')">Limit</button>
@@ -840,6 +840,22 @@ function bindEvents() {
       showGuideStep();
     }
   };
+  document.getElementById('guideHint').onclick = () => {
+    const s = guideSteps[state.guideStep];
+    document.querySelectorAll('#positionsBody tr').forEach(r => r.style.outline = '');
+    if (!s || !s.hintTarget) {
+      showToast('No specific row to hint on this step.');
+      return;
+    }
+    const rows = document.querySelectorAll('#positionsBody tr');
+    const idx = state.positions.findIndex(p => p.id === s.hintTarget);
+    if (idx >= 0 && rows[idx]) {
+      rows[idx].style.outline = '2px solid #00d4b1';
+      rows[idx].scrollIntoView({ block: 'nearest' });
+      const p = state.positions[idx];
+      hypurrSay(`Hint: market close the ${p.side.toUpperCase()} ${p.market} — margin ${p.margin.toFixed(2)} (${p.isolated ? 'isolated' : 'cross'}).`, 0);
+    }
+  };
   document.getElementById('guideSkip').onclick = () => {
     // Skip jumps ahead and keeps the guide open. Only a completed sprint closes it.
     state.guideStep = Math.min(state.guideStep + 1, guideSteps.length - 1);
@@ -1322,21 +1338,23 @@ const guideSteps = [
   },
   {
     title: 'Cross vs Isolated: the winner',
-    text: 'Congrats — the isolated long went according to plan. Close it. Available to Trade goes up by the margin plus profit. The rest of your balance never backed this trade.',
+    text: 'Congrats — the isolated long went according to plan. Market close it from the table. Available to Trade goes up by the margin plus profit. The rest of your balance never backed this trade. Click Give hint if you are not sure which row.',
     target: '.bottom',
-    preview: 'Close isolated',
+    preview: 'Market close',
     require: 'closedIsolated',
-    cat: 'Close the isolated winner. Available margin rises. Balance did not back it.',
+    hintTarget: 'iso-win',
+    cat: 'Market close the isolated winner. Available margin rises.',
     onEnter: 'seedModes',
     noBlackout: true
   },
   {
     title: 'Cross vs Isolated: the loser',
-    text: 'Now close the cross long. It is losing. The whole Available to Trade was collateral — if the loss had eaten the margin required to hold it, the trade would have been closed for you.',
+    text: 'Now market close the cross long. It is losing. The whole Available to Trade was collateral — if the loss had eaten the margin required to hold it, the trade would have been closed for you. Click Give hint to highlight the row.',
     target: '.bottom',
-    preview: 'Close cross',
+    preview: 'Market close',
     require: 'closedCross',
-    cat: 'Close the cross loser. Whole balance was collateral.',
+    hintTarget: 'cross-loss',
+    cat: 'Market close the cross loser. Whole balance was collateral.',
     noBlackout: true
   },
   {
