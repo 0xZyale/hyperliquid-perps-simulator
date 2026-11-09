@@ -580,13 +580,20 @@ function closePosition(id, silent = false) {
   const idx = state.positions.findIndex(p => p.id === id);
   if (idx === -1) return;
   const p = state.positions[idx];
+  const wasIsoWin = id === 'iso-win';
   const pnl = (p.side === 'long' ? (state.price - p.entry) : (p.entry - state.price)) * p.size;
   state.balance += p.margin + pnl;
   state.positions.splice(idx, 1);
   if (!silent) showToast(`Closed ${p.side} | PnL $${pnl.toFixed(2)}`);
   updateUI();
   fullDone = true;
-  hypurrSay(`Full close from chart. Position gone, PnL realized.`, 3000);
+  if (wasIsoWin) {
+    const av = document.getElementById('available');
+    if (av) { av.classList.add('glow'); setTimeout(() => av.classList.remove('glow'), 5000); }
+    hypurrSay('Available to Trade rose by the margin plus profit. The rest of your balance never backed this trade.', 0);
+  } else {
+    hypurrSay(`Full close from chart. Position gone, PnL realized.`, 3000);
+  }
   if (typeof checkStepProgress === 'function') checkStepProgress();
 }
 
@@ -843,7 +850,14 @@ function bindEvents() {
   document.getElementById('guideHint').onclick = () => {
     const s = guideSteps[state.guideStep];
     document.querySelectorAll('#positionsBody tr').forEach(r => r.style.outline = '');
-    if (!s || !s.hintTarget) {
+    if (!s) return;
+    if (s.hintTarget === 'tpslBox') {
+      const box = document.getElementById('tpslBox');
+      if (box) { box.classList.add('glow'); setTimeout(() => box.classList.remove('glow'), 3000); }
+      hypurrSay('Hint: check the Take Profit / Stop Loss box, set TP and SL, then Place Order.', 0);
+      return;
+    }
+    if (!s.hintTarget) {
       showToast('No specific row to hint on this step.');
       return;
     }
@@ -1335,10 +1349,11 @@ const guideSteps = [
   },
   {
     title: 'Place with TP / SL',
-    text: 'Place a new order with Take Profit / Stop Loss on. Check the box, set both TP and SL, then Place Order. Next unlocks only after the new position is open.',
+    text: 'Place a new order with Take Profit / Stop Loss on. Check the box, set both TP and SL, then Place Order. Next unlocks only after the new position is open. Click Give hint to highlight the checkbox.',
     target: '#tpslBox',
     preview: 'Take Profit / Stop Loss',
     require: 'orderWithTpsl',
+    hintTarget: 'tpslBox',
     cat: 'Check Take Profit / Stop Loss, set both, Place Order.',
     onEnter: 'tpslDemo',
     noBlackout: true
@@ -1536,6 +1551,7 @@ function showGuideStep() {
   document.getElementById('guideTitle').textContent = s.title;
   document.getElementById('guideText').textContent = s.text;
   document.getElementById('guideBack').style.visibility = state.guideStep === 0 ? 'hidden' : 'visible';
+  document.getElementById('guideHint').style.display = state.guideStep >= 22 ? '' : 'none';
   hypurrSay(s.cat || s.text);
 
   const preview = document.getElementById('guidePreview');
@@ -1585,7 +1601,9 @@ function showGuideStep() {
   }
   if (s.onEnter === 'seedModes') {
     seedCrossIsolatedDemo();
-    hypurrSay('Isolated winner and cross loser are in the table. Close the isolated one first.', 0);
+    const av = document.getElementById('available');
+    if (av) { av.classList.add('glow'); setTimeout(() => av.classList.remove('glow'), 4000); }
+    hypurrSay('Look at Available to Trade. Then market close the isolated HYPE long. It will rise.', 0);
   }
   if (s.onEnter === 'srScenario') {
     drawSrScenario();
