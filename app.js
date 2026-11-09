@@ -1601,6 +1601,7 @@ function showGuideStep() {
     updateTpslPct();
   }
   if (s.onEnter === 'tpslDemo') {
+    window.tpslPosCount = state.positions.length;
     document.getElementById('tpslToggle').checked = true;
     document.getElementById('tpslInputs').style.display = 'block';
     if (!document.getElementById('tpPrice').value) {
