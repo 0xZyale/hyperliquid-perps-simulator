@@ -1374,7 +1374,8 @@ const guideSteps = [
     target: '#chart',
     preview: '✕ on limit',
     require: 'limitCancel',
-    cat: 'Click the ✕ on the limit line to cancel.'
+    cat: 'Click the ✕ on the limit line to cancel.',
+    noBlackout: true
   },
   {
     title: 'Sprint 3 done',
