@@ -965,24 +965,37 @@ function bindEvents() {
     }
     showGuideStep();
   };
-  document.getElementById('guideJump').onchange = (e) => {
+  // Populate jump list from the live steps so indices never go stale
+  const jumpSel = document.getElementById('guideJump');
+  jumpSel.innerHTML = '<option value="">Jump to…</option>';
+  guideSteps.forEach((s, i) => {
+    if (s.endSprint) return; // never jump to a "Finished" closer
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = s.title;
+    jumpSel.appendChild(opt);
+  });
+  jumpSel.onchange = (e) => {
     const v = e.target.value;
     if (v === '') return;
-    state.guideStep = +v;
+    let idx = +v;
+    // Safety: if somehow an endSprint step is targeted, skip past it
+    while (guideSteps[idx] && guideSteps[idx].endSprint && idx < guideSteps.length - 1) idx++;
+    state.guideStep = idx;
     e.target.value = '';
-    if (+v >= 3 && state.balance < 1000) {
+    if (idx >= 3 && state.balance < 1000) {
       state.balance = 1000;
       updateUI();
       showToast('Margin topped up to 1000 USDC');
     }
-    // Anything past the positions sprint unlocks the table
-    if (+v >= 8) {
+    if (idx >= 8) {
       const seal = document.getElementById('positionsSeal');
       if (seal) seal.classList.add('unlocked');
     }
     if (!document.getElementById('guideOverlay').classList.contains('active')) {
       document.getElementById('guideOverlay').classList.add('active');
     }
+    guideBegun = true;
     showGuideStep();
   };
   document.querySelectorAll('.tf-btn').forEach(btn => {
