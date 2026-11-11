@@ -103,7 +103,7 @@ main {
   gap: 16px;
   background: var(--panel-2);
 }
-.market-select { font-size: 18px; font-weight: 600; }
+.market-select { font-size: 18px; font-weight: 600; position: relative; }
 .market-select select {
   background: var(--panel);
   color: var(--text);
@@ -587,4 +587,77 @@ input[type="number"], input[type="text"], select {
   background: currentColor;
   left: 50%;
   transform: translateX(-50%);
+}
+
+/* Market picker */
+.market-name {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+.market-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 480px;
+  max-height: 420px;
+  overflow: hidden;
+  z-index: 2500;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+}
+.market-search {
+  margin: 8px;
+  padding: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+}
+.cat-tabs, .sub-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.cat-tab, .sub-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.cat-tab.active, .sub-tab.active {
+  color: var(--text);
+  border-bottom: 2px solid var(--accent);
+}
+.market-list { overflow-y: auto; flex: 1; }
+.market-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.market-row:hover { background: var(--panel-2); }
+.market-row .badge {
+  background: #1a3a32;
+  color: var(--accent);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
 }

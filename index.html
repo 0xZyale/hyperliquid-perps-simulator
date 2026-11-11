@@ -68,6 +68,8 @@
         <option value="19">Sprint 4b: Find HYPE</option>
         <option value="20">Sprint 4b: Long HYPE</option>
         <option value="22">Sprint 5: Support / Resistance</option>
+        <option value="26">Sprint 6: Perps vs Spot</option>
+        <option value="27">Sprint 6: Perps vs TradFi</option>
       </select>
       <button class="btn" id="depositHeaderBtn" data-tooltip="Bridge USDC onto Hyperliquid (simulated). Funds become available margin after confirmation.">Deposit</button>
       <button class="btn" id="connectBtn" data-tooltip="Connect an EVM wallet (Rabby or MetaMask). Simulated.">Connect</button>
@@ -78,13 +80,32 @@
     <div class="chart-wrap">
       <div class="market-header">
         <div class="market-select" id="marketSelect">
-          <select id="marketDropdown">
+          <button class="market-name" id="marketNameBtn">BTC-USDC ▾</button>
+          <div class="market-picker" id="marketPicker" style="display:none;">
+            <input type="text" id="marketSearch" placeholder="Search" class="market-search">
+            <div class="cat-tabs" id="catTabs">
+              <button class="cat-tab active" data-cat="all">All</button>
+              <button class="cat-tab" data-cat="perps">Perps</button>
+              <button class="cat-tab" data-cat="spot">Spot</button>
+              <button class="cat-tab" data-cat="crypto">Crypto</button>
+              <button class="cat-tab" data-cat="tradfi">Tradfi</button>
+              <button class="cat-tab" data-cat="hip3">HIP-3</button>
+              <button class="cat-tab" data-cat="trending">Trending</button>
+              <button class="cat-tab" data-cat="prelaunch">Pre-launch</button>
+            </div>
+            <div class="sub-tabs" id="subTabs" style="display:none;">
+              <button class="sub-tab active" data-sub="all">All</button>
+              <button class="sub-tab" data-sub="stocks">Stocks</button>
+              <button class="sub-tab" data-sub="indices">Indices</button>
+              <button class="sub-tab" data-sub="commodities">Commodities</button>
+              <button class="sub-tab" data-sub="fx">FX</button>
+              <button class="sub-tab" data-sub="preipo">Pre-IPO</button>
+              <button class="sub-tab" data-sub="rates">Rates</button>
+            </div>
+            <div class="market-list" id="marketList"></div>
+          </div>
+          <select id="marketDropdown" style="display:none;">
             <option value="BTC-USDC">BTC-USDC</option>
-            <option value="ETH-USDC">ETH-USDC</option>
-            <option value="XRP-USDC">XRP-USDC</option>
-            <option value="HYPE-USDC">HYPE-USDC</option>
-            <option value="ZEC-USDC">ZEC-USDC</option>
-            <option value="SOL-USDC">SOL-USDC</option>
           </select>
         </div>
         <div class="timeframes" id="timeframes">

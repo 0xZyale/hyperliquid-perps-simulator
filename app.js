@@ -14,14 +14,95 @@ const state = {
 };
 
 const markets = {
-  'BTC-USDC': { price: 92900, precision: 1, binance: 'BTCUSDT' },
-  'ETH-USDC': { price: 3080, precision: 2, binance: 'ETHUSDT' },
-  'XRP-USDC': { price: 2.17, precision: 4, binance: 'XRPUSDT' },
-  'HYPE-USDC': { price: 78, precision: 2, binance: 'HYPEUSDT' },
-  'ZEC-USDC': { price: 48, precision: 2, binance: 'ZECUSDT' },
-  'SOL-USDC': { price: 141, precision: 2, binance: 'SOLUSDT' }
+  'BTC-USDC': { price: 92900, precision: 1, binance: 'BTCUSDT', type: 'perp', cat: 'crypto', maxLev: 50 },
+  'ETH-USDC': { price: 3080, precision: 2, binance: 'ETHUSDT', type: 'perp', cat: 'crypto', maxLev: 50 },
+  'XRP-USDC': { price: 2.17, precision: 4, binance: 'XRPUSDT', type: 'perp', cat: 'crypto', maxLev: 20 },
+  'HYPE-USDC': { price: 78, precision: 2, binance: 'HYPEUSDT', type: 'perp', cat: 'crypto', maxLev: 20 },
+  'ZEC-USDC': { price: 48, precision: 2, binance: 'ZECUSDT', type: 'perp', cat: 'crypto', maxLev: 10 },
+  'SOL-USDC': { price: 141, precision: 2, binance: 'SOLUSDT', type: 'perp', cat: 'crypto', maxLev: 20 },
+  'BTC/USDC': { price: 92900, precision: 1, binance: 'BTCUSDT', type: 'spot', cat: 'crypto' },
+  'ETH/USDC': { price: 3080, precision: 2, binance: 'ETHUSDT', type: 'spot', cat: 'crypto' },
+  'HYPE/USDC': { price: 78, precision: 2, type: 'spot', cat: 'crypto' },
+  'XYZ100-USDC': { price: 28204, precision: 1, type: 'perp', cat: 'tradfi', sub: 'indices', badge: 'xyz', maxLev: 30 },
+  'TSLA-USDC': { price: 399, precision: 2, type: 'perp', cat: 'tradfi', sub: 'stocks', badge: 'xyz', maxLev: 10 },
+  'NVDA-USDC': { price: 142, precision: 2, type: 'perp', cat: 'tradfi', sub: 'stocks', badge: 'xyz', maxLev: 10 },
+  'GOLD-USDC': { price: 2680, precision: 1, type: 'perp', cat: 'tradfi', sub: 'commodities', badge: 'xyz', maxLev: 20 },
+  'EURUSD-USDC': { price: 1.08, precision: 4, type: 'perp', cat: 'tradfi', sub: 'fx', badge: 'xyz', maxLev: 50 },
+  'SPACEX-USDC': { price: 250, precision: 2, type: 'perp', cat: 'tradfi', sub: 'preipo', badge: 'xyz', maxLev: 5 },
+  'US10Y-USDC': { price: 4.2, precision: 3, type: 'perp', cat: 'tradfi', sub: 'rates', badge: 'xyz', maxLev: 10 }
 };
-let currentMarket = 'BTC-USDC';
+let currentCat = 'all';
+let currentSub = 'all';
+function renderMarketList() {
+  const list = document.getElementById('marketList');
+  const q = (document.getElementById('marketSearch')?.value || '').toLowerCase();
+  const rows = Object.entries(markets).filter(([sym, m]) => {
+    if (q && !sym.toLowerCase().includes(q)) return false;
+    if (currentCat === 'perps' && m.type !== 'perp') return false;
+    if (currentCat === 'spot' && m.type !== 'spot') return false;
+    if (currentCat === 'crypto' && m.cat !== 'crypto') return false;
+    if (currentCat === 'tradfi' && m.cat !== 'tradfi') return false;
+    if (currentCat === 'hip3' && !m.badge) return false;
+    if (currentCat === 'trending' && !['BTC-USDC','ETH-USDC','HYPE-USDC','XYZ100-USDC'].includes(sym)) return false;
+    if (currentCat === 'prelaunch' && m.sub !== 'preipo') return false;
+    if (currentCat === 'tradfi' && currentSub !== 'all' && m.sub !== currentSub) return false;
+    return true;
+  });
+  list.innerHTML = rows.map(([sym, m]) => `
+    <div class="market-row" data-sym="${sym}">
+      <span>${sym}${m.badge ? ` <span class="badge">${m.badge}</span>` : ''} ${m.type === 'spot' ? '<span class="badge">spot</span>' : ''}</span>
+      <span>${m.price.toLocaleString()}</span>
+    </div>
+  `).join('') || '<div style="padding:12px; color:var(--muted);">No markets</div>';
+  list.querySelectorAll('.market-row').forEach(row => {
+    row.onclick = () => selectMarket(row.dataset.sym);
+  });
+}
+function selectMarket(sym) {
+  currentMarket = sym;
+  document.getElementById('marketNameBtn').textContent = sym + ' ▾';
+  document.getElementById('marketPicker').style.display = 'none';
+  const m = markets[sym];
+  if (m) {
+    state.price = m.price;
+    loadCandles(+document.querySelector('.tf-btn.active')?.dataset.tf || 60);
+    updateSizeUnit();
+    updateUI();
+    updateBook();
+    refreshLimitLines();
+    fetchPythPrice();
+    document.getElementById('tpPrice').value = '';
+    document.getElementById('slPrice').value = '';
+    if (typeof checkStepProgress === 'function') checkStepProgress();
+  }
+}
+function bindMarketPicker() {
+  document.getElementById('marketNameBtn').onclick = () => {
+    const p = document.getElementById('marketPicker');
+    p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+    if (p.style.display === 'flex') renderMarketList();
+  };
+  document.getElementById('marketSearch').oninput = renderMarketList;
+  document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentCat = tab.dataset.cat;
+      document.getElementById('subTabs').style.display = currentCat === 'tradfi' ? 'flex' : 'none';
+      renderMarketList();
+      if (typeof checkStepProgress === 'function') checkStepProgress();
+    };
+  });
+  document.querySelectorAll('.sub-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentSub = tab.dataset.sub;
+      renderMarketList();
+    };
+  });
+  renderMarketList();
+}
 let limitOrders = []; // {id, market, side, price, size}
 let orderType = 'market';
 let candleInterval = 60; // seconds per candle (15m=900, 1h=3600, 4h=14400 for display spacing)
@@ -914,6 +995,7 @@ function bindEvents() {
   });
   // Load real candles on start
   loadCandles(60);
+  bindMarketPicker();
   document.getElementById('marketDropdown').onchange = (e) => {
     currentMarket = e.target.value;
     updateSizeUnit();
@@ -1205,7 +1287,8 @@ const guideSteps = [
     preview: 'Place Order',
     require: 'order',
     cat: 'Confirm Market, then Place Order.',
-    onEnter: 'forceMarket'
+    onEnter: 'forceMarket',
+    noBlackout: true
   },
   {
     title: 'Order form done — nice work',
@@ -1223,7 +1306,8 @@ const guideSteps = [
     require: 'partial',
     precondition: 'hasPosition',
     cat: 'Use Limit / Market / Trailing / Reverse to close.',
-    onEnter: 'unlockPositions'
+    onEnter: 'unlockPositions',
+    noBlackout: true
   },
   {
     title: 'Sprint 3: Full Close (Chart)',
@@ -1233,7 +1317,8 @@ const guideSteps = [
     previewHtml: true,
     require: 'full',
     precondition: 'hasPosition',
-    cat: 'On some platforms you can close from the chart. Click the ✕ on the position line.'
+    cat: 'On some platforms you can close from the chart. Click the ✕ on the position line.',
+    noBlackout: true
   },
   {
     title: 'Sprint 3: Set TP/SL from Positions',
@@ -1244,7 +1329,8 @@ const guideSteps = [
     require: 'posTpsl',
     precondition: 'hasPosition',
     cat: 'Click the pencil ✎, set TP and SL, Save.',
-    onEnter: 'unlockPositions'
+    onEnter: 'unlockPositions',
+    noBlackout: true
   },
   {
     title: 'Sprint 3: TP / SL + Support / Resistance',
@@ -1259,9 +1345,10 @@ const guideSteps = [
   {
     title: 'Select an Asset',
     text: 'Use the market dropdown (top-left) to switch perps: BTC, ETH, XRP, HYPE, ZEC, SOL. Each has its own price, leverage limit, and volatility. Pick the one you want to trade.',
-    target: '#marketDropdown',
+    target: '#marketNameBtn',
     preview: 'Market',
-    cat: 'Switch markets. Alts move more than BTC.'
+    cat: 'Open the picker and switch markets. Alts move more than BTC.',
+    noBlackout: true
   },
   {
     title: 'Market → Limit',
@@ -1269,7 +1356,8 @@ const guideSteps = [
     target: '#orderTypeLimit',
     preview: 'Limit',
     require: 'limitType',
-    cat: 'Switch to Limit. Price must be away from market.'
+    cat: 'Switch to Limit. Price must be away from market.',
+    noBlackout: true
   },
   {
     title: 'Place the Limit',
@@ -1277,7 +1365,8 @@ const guideSteps = [
     target: '#limitPct',
     preview: '% away',
     require: 'limitPlaced',
-    cat: 'Enter % away, then Place Order. Watch the line.'
+    cat: 'Enter % away, then Place Order. Watch the line.',
+    noBlackout: true
   },
   {
     title: 'Cancel the Limit',
@@ -1297,7 +1386,7 @@ const guideSteps = [
   {
     title: 'Sprint 4a: Find ETH',
     text: 'Subquest 1. Open the market dropdown (top-left) and select ETH-USDC. There is no single ETH-short button — first find the market.',
-    target: '#marketDropdown',
+    target: '#marketNameBtn',
     preview: 'ETH-USDC',
     require: 'selectEth',
     cat: 'Select ETH-USDC from the market dropdown.',
@@ -1316,7 +1405,7 @@ const guideSteps = [
   {
     title: 'Sprint 4b: Find HYPE',
     text: 'Subquest 1. Open the market dropdown and select HYPE-USDC.',
-    target: '#marketDropdown',
+    target: '#marketNameBtn',
     preview: 'HYPE-USDC',
     require: 'selectHype',
     cat: 'Select HYPE-USDC from the market dropdown.',
@@ -1383,10 +1472,35 @@ const guideSteps = [
     noBlackout: true
   },
   {
-    title: 'Done',
-    text: 'Sprint 5 is done. You finished Bridge → Order form → Positions → ETH/HYPE → Support & Resistance → Cross vs Isolated. Same flow on the real Hyperliquid app. Jump to… anytime to revisit.',
+    title: 'Sprint 5 done',
+    text: 'Cross vs Isolated is done. Take a break. Resume for crypto perps vs spot, then vs TradFi.',
     target: null,
-    cat: 'Sprint 5 complete. Minimize losses, maximize gains.',
+    cat: 'Sprint 5 complete. Resume for Sprint 6.',
+    endSprint: true
+  },
+  {
+    title: 'Sprint 6: Crypto Perps vs Spot',
+    text: 'Perps are leveraged contracts with no expiry and a funding rate. Spot is owning the asset outright — no leverage, no funding. Open the market picker and click Spot.',
+    target: '#marketNameBtn',
+    preview: 'Spot',
+    require: 'viewSpot',
+    cat: 'Perps = leverage + funding. Spot = own the asset. Click Spot in the picker.',
+    noBlackout: true
+  },
+  {
+    title: 'Sprint 6: Crypto Perps vs RWA / TradFi',
+    text: 'Crypto perps track BTC, ETH, HYPE. TradFi / RWA perps track stocks, indices, commodities, FX — same margin and liquidation rules, different underlying. Open the picker, click Tradfi, and pick any xyz market.',
+    target: '#marketNameBtn',
+    preview: 'Tradfi',
+    require: 'selectTradfi',
+    cat: 'Same rules, different underlying. Click Tradfi and pick an xyz market.',
+    noBlackout: true
+  },
+  {
+    title: 'Done',
+    text: 'Sprint 6 is done. You covered crypto perps, spot, and TradFi/RWA perps. Same order form, different markets. Jump to… anytime to revisit.',
+    target: null,
+    cat: 'Sprint 6 complete.',
     endSprint: true
   }
 ];
@@ -1511,6 +1625,10 @@ function checkStepProgress() {
     ok = !state.positions.some(p => p.id === 'iso-win');
   } else if (s.require === 'closedCross') {
     ok = !state.positions.some(p => p.id === 'cross-loss');
+  } else if (s.require === 'selectTradfi') {
+    ok = markets[currentMarket]?.cat === 'tradfi';
+  } else if (s.require === 'viewSpot') {
+    ok = currentCat === 'spot' || markets[currentMarket]?.type === 'spot';
   } else if (s.require === 'tpsl') {
     const tp = parseFloat(document.getElementById('tpPrice').value);
     const sl = parseFloat(document.getElementById('slPrice').value);
@@ -1664,15 +1782,21 @@ function showGuideStep() {
         leftPos = Math.max(20, r.right + 16);
         topPos = Math.max(70, r.top);
       }
-      // Chart step: keep guide on the right so chart stays free
-      if (s.target === '#chart') {
-        leftPos = window.innerWidth - boxW - 40;
-        topPos = 80;
-      }
-      // Bottom panel (positions): place guide above it
+      // Bottom panel (positions): place guide well above so table buttons stay free
       if (s.target === '.bottom') {
         leftPos = Math.max(20, r.left + 20);
-        topPos = Math.max(70, r.top - boxH - 16);
+        topPos = Math.max(70, r.top - boxH - 40);
+      }
+      // Order form targets: keep guide left of the panel, never overlapping
+      if (el.closest && el.closest('.order-panel')) {
+        const pr = panel.getBoundingClientRect();
+        leftPos = Math.max(20, pr.left - boxW - 60);
+        topPos = Math.max(70, Math.min(r.top - 20, window.innerHeight - boxH - 40));
+      }
+      // Chart targets: keep guide on the right edge so the chart stays free
+      if (s.target === '#chart' || s.target === '#marketNameBtn') {
+        leftPos = window.innerWidth - boxW - 60;
+        topPos = 100;
       }
     }
   }
